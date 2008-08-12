@@ -1,0 +1,16 @@
+name "logger"
+
+using_library "typelib"
+using_toolkit "dfki"
+
+task_context "Logger" do
+end
+
+static_deployment do
+    logger = task("Logger").
+        period(0.2).
+        start
+
+    browse logger
+end
+
