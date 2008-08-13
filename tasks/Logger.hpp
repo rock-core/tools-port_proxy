@@ -4,20 +4,28 @@
 #include "logger/LoggerBase.hpp"
 #include <typelib/registry.hh>
 
-namespace logger {
-    class LogStream;
+namespace Logging {
+    class StreamLogger;
+}
 
+namespace logger {
     class Logger : public LoggerBase
     {
 	friend class LoggerBase;
+        static const int ORO_UNTYPED_PROTOCOL_ID = 42;
+
     protected:
 
         Typelib::Registry m_registry;
+        std::ofstream*    m_file;
     
-    
+        bool startHook();
+        void updateHook();
+        void stopHook();
 
     public:
         Logger(std::string const& name = "logger::Logger");
+        ~Logger();
 
         /**
          * Report all the data ports of a component.
@@ -57,16 +65,20 @@ namespace logger {
 
     private:
         typedef RTT::DataFlowInterface::Ports Ports;
-        typedef boost::tuple<std::string,
-                             RTT::DataSourceBase::shared_ptr,
-                             boost::shared_ptr<RTT::CommandInterface>,
-                             RTT::DataSourceBase::shared_ptr,
-                             std::string,
-                             LogStream*> DTupple;
+
+        struct ReportDescription {
+            std::string name;
+            RTT::DataSourceBase::shared_ptr source;
+            boost::shared_ptr<RTT::CommandInterface> reading_command;
+            RTT::DataSourceBase::shared_ptr dest;
+            std::string kind;
+            Logging::StreamLogger* logger;
+        };
+
         /**
          * Stores the 'datasource' of all reported items as properties.
          */
-        typedef std::vector<DTupple> Reports;
+        typedef std::vector<ReportDescription> Reports;
         Reports root;
 
         void loadRegistry();

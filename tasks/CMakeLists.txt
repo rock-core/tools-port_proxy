@@ -1,7 +1,9 @@
 
 
 SET(libname logger-tasks-${OROCOS_TARGET})
-ADD_LIBRARY(${libname} SHARED ${CMAKE_SOURCE_DIR}/.orogen/tasks/LoggerBase.cpp Logger.cpp Logfile.cpp)
+ADD_LIBRARY(${libname} SHARED ${CMAKE_SOURCE_DIR}/.orogen/tasks/LoggerBase.cpp Logger.cpp
+     ${CMAKE_SOURCE_DIR}/.orogen/tasks/LoggerTestBase.cpp LoggerTest.cpp
+     Logfile.cpp)
 TARGET_APPEND_LDFLAGS(${libname} "${DEPENDENCIES_LDFLAGS}")
 
 INSTALL(TARGETS ${libname}

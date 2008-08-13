@@ -4,13 +4,23 @@ using_library "typelib"
 using_toolkit "dfki"
 
 task_context "Logger" do
+    property("file", "std/string").
+        doc "the output file name"
+end
+
+task_context "LoggerTest" do
+    data_port "time", "DFKI/Time", "w"
 end
 
 static_deployment do
     logger = task("Logger").
+        period(0.2)
+
+    test = task("LoggerTest").
         period(0.2).
         start
 
+    add_peers logger, test
     browse logger
 end
 
