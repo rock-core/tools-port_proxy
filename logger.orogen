@@ -4,6 +4,8 @@ using_library "typelib"
 using_toolkit "dfki"
 
 task_context "Logger" do
+    data_driven
+
     property("file", "std/string").
         doc "the output file name"
 end
@@ -13,14 +15,20 @@ task_context "LoggerTest" do
 end
 
 static_deployment do
-    logger = task("Logger").
-        period(0.2)
-
     test = task("LoggerTest").
         period(0.2).
         start
 
-    add_peers logger, test
+    logger = task("Logger")
+    logger.file = "test.log"
+
+    # Hand-make the data logger setup
+    logger_setup = StaticDeployment::Logger.new(component, logger)
+    data_loggers["test.log"] = logger_setup
+    logger_setup.report(test.time, false)
+
+    logger.start
+
     browse logger
 end
 

@@ -7,6 +7,9 @@
 namespace Logging {
     class StreamLogger;
 }
+namespace RTT {
+    class EventDrivenActivity;
+}
 
 namespace logger {
     class Logger : public LoggerBase
@@ -22,6 +25,8 @@ namespace logger {
         bool startHook();
         void updateHook();
         void stopHook();
+
+        RTT::EventDrivenActivity* getEventDrivenActivity() const;
 
     public:
         Logger(std::string const& name = "logger::Logger");

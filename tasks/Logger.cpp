@@ -4,6 +4,7 @@
 #include <utilmm/configfile/pkgconfig.hh>
 #include <utilmm/stringtools.hh>
 #include <typelib/pluginmanager.hh>
+#include <rtt/EventDrivenActivity.hpp>
 
 #include "Logfile.hpp"
 #include <fstream>
@@ -15,6 +16,7 @@ using RTT::TypeInfo;
 using RTT::log;
 using RTT::endlog;
 using RTT::Error;
+using RTT::Info;
 
 Logger::Logger(std::string const& name)
     : LoggerBase(name)
@@ -31,6 +33,11 @@ Logger::~Logger()
     stop();
 }
 
+RTT::EventDrivenActivity* Logger::getEventDrivenActivity() const
+{
+    return dynamic_cast<RTT::EventDrivenActivity*>(engine()->getActivity());
+}
+
 bool Logger::startHook()
 {
     if (_file.value().empty())
@@ -40,6 +47,8 @@ bool Logger::startHook()
     // Now, create the output file
     auto_ptr<ofstream> out_file(new ofstream(_file.value().c_str()));
     Logging::writePrologue(*out_file.get());
+
+    RTT::EventDrivenActivity* activity = getEventDrivenActivity();
     
     for (Reports::iterator it = root.begin(); it != root.end(); ++it)
     {
@@ -129,6 +138,13 @@ bool Logger::reportPort(const std::string& component, const std::string& port, b
         if ( porti->connectTo( ourport ) == false ) {
             delete ourport;
             return false;
+        }
+
+        RTT::EventDrivenActivity* activity = getEventDrivenActivity();
+        if (activity)
+        {
+            log(Info) << "triggering updates when data is available on " << porti->getName() << endlog();
+            activity->addEvent( porti->getNewDataEvent() );
         }
 
         delete ourport;
