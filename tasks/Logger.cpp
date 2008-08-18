@@ -197,11 +197,9 @@ void Logger::loadRegistry()
     list<string> packages = utilmm::pkgconfig::packages();
     for (list<string>::const_iterator it = packages.begin(); it != packages.end(); ++it)
     {
-        list<string> fields = utilmm::split(*it, " ");
-        string name = fields.front();
-        if (name.size() > pattern.size() && string(name, name.size() - pattern.size()) == pattern)
+        if (it->size() > pattern.size() && string(*it, it->size() - pattern.size()) == pattern)
         {
-            utilmm::pkgconfig pkg(name);
+            utilmm::pkgconfig pkg(*it);
             string tlb = pkg.get("type_registry");
             if (!tlb.empty())
             {
