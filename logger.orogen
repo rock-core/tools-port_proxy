@@ -12,6 +12,7 @@ end
 
 task_context "LoggerTest" do
     data_port "time", "DFKI/Time", "w"
+    data_port "scans", "DFKI/LaserReadings", "w"
 end
 
 static_deployment do
@@ -26,6 +27,7 @@ static_deployment do
     logger_setup = StaticDeployment::Logger.new(component, logger)
     data_loggers["test.log"] = logger_setup
     logger_setup.report(test.time, false)
+    logger_setup.report(test.scans, false)
 
     logger.start
 

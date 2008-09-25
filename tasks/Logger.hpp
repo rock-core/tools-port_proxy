@@ -9,6 +9,7 @@ namespace Logging {
 }
 namespace RTT {
     class EventDrivenActivity;
+    class PortInterface;
 }
 
 namespace logger {
@@ -23,7 +24,7 @@ namespace logger {
         std::ofstream*    m_file;
     
         bool startHook();
-        void updateHook();
+        void updateHook(std::set<RTT::PortInterface*> const& updated_ports);
         void stopHook();
 
         RTT::EventDrivenActivity* getEventDrivenActivity() const;
@@ -78,6 +79,7 @@ namespace logger {
             RTT::DataSourceBase::shared_ptr dest;
             std::string kind;
             Logging::StreamLogger* logger;
+            RTT::PortInterface* port;
         };
 
         /**

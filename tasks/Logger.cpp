@@ -61,7 +61,7 @@ bool Logger::startHook()
     return true;
 }
 
-void Logger::updateHook()
+void Logger::updateHook(std::set<RTT::PortInterface*> const& updated_ports)
 {
     // Execute all copies in one shot to do it as fast as possible
     Time stamp = Time::now();
@@ -70,11 +70,14 @@ void Logger::updateHook()
 
     for (Reports::iterator it = root.begin(); it != root.end(); ++it)
     {
-        TypeInfo const* type_info = it->source->getTypeInfo();
-        RTT::detail::TypeTransporter* converter = type_info->getProtocol(ORO_UNTYPED_PROTOCOL_ID);
-        uint8_t* buffer = reinterpret_cast<uint8_t*>( converter->createBlob(it->dest) );
-        it->logger->update(stamp, buffer);
-        delete[] buffer;
+        if (updated_ports.find(it->port) != updated_ports.end())
+        {
+            TypeInfo const* type_info = it->source->getTypeInfo();
+            RTT::detail::TypeTransporter* converter = type_info->getProtocol(ORO_UNTYPED_PROTOCOL_ID);
+            vector<uint8_t>* buffer = reinterpret_cast< vector<uint8_t>* >( converter->createBlob(it->dest) );
+            it->logger->update(stamp, &(*buffer)[0], buffer->size());
+            delete buffer;
+        }
     }
 }
 
@@ -148,6 +151,7 @@ bool Logger::reportPort(const std::string& component, const std::string& port, b
 
         delete ourport;
         this->reportDataSource( component + "." + porti->getName(), "Port", porti->connection()->getDataSource(), peek );
+        root.back().port = porti;
     }
     return true;
 }
@@ -243,6 +247,7 @@ bool Logger::reportDataSource(std::string tag, std::string type, RTT::DataSource
         report.dest   = clone;
         report.kind   = type;
         report.logger = NULL;
+        report.port   = NULL;
         root.push_back(report);
     } catch ( RTT::bad_assignment& ba ) {
         return false;

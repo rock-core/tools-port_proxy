@@ -8,6 +8,8 @@ namespace logger {
     {
 	friend class LoggerTestBase;
 
+        DFKI::LaserReadings range;
+
     protected:
         void updateHook();
 
