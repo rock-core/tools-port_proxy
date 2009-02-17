@@ -49,8 +49,6 @@ bool Logger::startHook()
     auto_ptr<ofstream> io(new ofstream(_file.value().c_str()));
     auto_ptr<Logfile>  file(new Logfile(*io));
 
-    RTT::EventDrivenActivity* activity = getEventDrivenActivity();
-    
     for (Reports::iterator it = root.begin(); it != root.end(); ++it)
     {
         RTT::TypeInfo const* type_info = it->source->getTypeInfo();
