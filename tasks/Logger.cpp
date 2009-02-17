@@ -88,6 +88,8 @@ void Logger::stopHook()
         delete it->logger;
         it->logger = 0;
     }
+    delete m_io;
+    m_io = 0;
     delete m_file;
     m_file = 0;
 }
