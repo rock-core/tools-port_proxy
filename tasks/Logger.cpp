@@ -11,6 +11,7 @@
 
 using namespace logger;
 using namespace std;
+using namespace Logging;
 using DFKI::Time;
 using RTT::TypeInfo;
 using RTT::log;
@@ -45,8 +46,8 @@ bool Logger::startHook()
 
     // The registry has been loaded on construction
     // Now, create the output file
-    auto_ptr<ofstream> out_file(new ofstream(_file.value().c_str()));
-    Logging::writePrologue(*out_file.get());
+    auto_ptr<ofstream> io(new ofstream(_file.value().c_str()));
+    auto_ptr<Logfile>  file(new Logfile(*io));
 
     RTT::EventDrivenActivity* activity = getEventDrivenActivity();
     
@@ -54,10 +55,11 @@ bool Logger::startHook()
     {
         RTT::TypeInfo const* type_info = it->source->getTypeInfo();
         it->logger = new Logging::StreamLogger(
-                it->name, type_info->getTypeName(), m_registry, *out_file);
+                it->name, type_info->getTypeName(), m_registry, *file);
     }
 
-    m_file = out_file.release();
+    m_io   = io.release();
+    m_file = file.release();
     return true;
 }
 
@@ -83,6 +85,11 @@ void Logger::updateHook(std::set<RTT::PortInterface*> const& updated_ports)
 
 void Logger::stopHook()
 {
+    for (Reports::iterator it = root.begin(); it != root.end(); ++it)
+    {
+        delete it->logger;
+        it->logger = 0;
+    }
     delete m_file;
     m_file = 0;
 }

@@ -63,14 +63,23 @@ void Logging::writePrologue(std::ostream& stream)
 
 namespace Logging
 {
-    boost::mutex  OutputStream::s_mtx_static;
-    size_t OutputStream::s_next_index = 0;
+    Logfile::Logfile(std::ostream& stream)
+        : m_stream(stream)
+        , m_stream_idx(0)
+    {
+        writePrologue(stream);
+    }
 
-    OutputStream::OutputStream(std::ostream& stream)
-        : m_block(UnknownBlockType), m_stream(stream), m_stream_idx(nstream) { }
+    int Logfile::newStreamIndex()
+    { return m_stream_idx++; }
+    void Logfile::write(std::vector<uint8_t> const& buffer)
+    { m_stream.write(reinterpret_cast<const char*>(&buffer[0]), buffer.size()); }
+
+    OutputStream::OutputStream(Logfile& file)
+        : m_block(UnknownBlockType), m_file(file), m_stream_idx(nstream) { }
     OutputStream::~OutputStream() {}
 
-    void   OutputStream::newStream() { m_stream_idx = newStreamIndex(); }
+    void   OutputStream::newStream() { m_stream_idx = m_file.newStreamIndex(); }
     size_t OutputStream::getStreamIndex() const { return m_stream_idx; }
 
     void OutputStream::begin(BlockType block_type)
@@ -90,14 +99,8 @@ namespace Logging
 
         long data_size = m_buffer.size() - sizeof(BlockHeader);
         reinterpret_cast<BlockHeader*>(&m_buffer[0]) -> data_size = endian::to_little<uint32_t>(data_size);
-        m_stream.write(reinterpret_cast<const char*>(&m_buffer[0]), m_buffer.size());
+        m_file.write(m_buffer);
         m_block = UnknownBlockType;
-    }
-
-    size_t OutputStream::newStreamIndex()
-    { 
-        mutex::scoped_lock staticlock(s_mtx_static);
-        return s_next_index++;
     }
 
     void OutputStream::writeInBuffer(const uint8_t* data, size_t data_size)
@@ -124,10 +127,10 @@ namespace Logging
 
 
 
-    StreamLogger::StreamLogger(std::string const& name, const std::string& type_name, std::ostream& stream)
+    StreamLogger::StreamLogger(std::string const& name, const std::string& type_name, Logfile& file)
         : m_name(name), m_type_name(type_name)
         , m_type_def()
-        , m_type_size(0), m_stream(stream)
+        , m_type_size(0), m_stream(file)
     { 
         m_stream.newStream();
         registerStream();
@@ -141,10 +144,10 @@ namespace Logging
         return 0;
     }
 
-    StreamLogger::StreamLogger(std::string const& name, const std::string& type_name, Typelib::Registry const& registry, std::ostream& stream)
+    StreamLogger::StreamLogger(std::string const& name, const std::string& type_name, Typelib::Registry const& registry, Logfile& file)
         : m_name(name), m_type_name(type_name)
         , m_type_def(Typelib::PluginManager::save("tlb", registry))
-        , m_type_size(getTypeSize(registry, type_name)), m_stream(stream)
+        , m_type_size(getTypeSize(registry, type_name)), m_stream(file)
     {
         m_stream.newStream();
         registerStream();

@@ -46,6 +46,17 @@ namespace Typelib {
 }
 namespace Logging
 {
+    class Logfile
+    {
+        std::ostream& m_stream;
+        int m_stream_idx;
+
+    public:
+        Logfile(std::ostream& stream);
+        int newStreamIndex();
+        void write(std::vector<uint8_t> const& buffer);
+    };
+
     class OutputStream
     {
         template<class T> friend OutputStream& operator << (OutputStream& output, const T& value);
@@ -54,13 +65,9 @@ namespace Logging
     private:
         BlockType m_block;
         
-        std::ostream& m_stream;
+        Logfile& m_file;
         size_t m_stream_idx;
         
-        static boost::mutex s_mtx_static;
-        static size_t s_next_index;
-        static size_t newStreamIndex();
-
         void writeInBuffer(const uint8_t* data, size_t data_size);
 
         template<class T>
@@ -74,7 +81,7 @@ namespace Logging
         Buffer m_buffer;
 
     public:
-        OutputStream(std::ostream& stream);
+        OutputStream(Logfile& file);
         ~OutputStream();
 
         /** Start a new stream */
@@ -200,7 +207,7 @@ namespace Logging
          * @arg type_name the stream type name
          * @arg stream the stream object
          */
-        StreamLogger(std::string const& name, std::string const& type_name, std::ostream& stream);
+        StreamLogger(std::string const& name, std::string const& type_name, Logfile& file);
 
         /** Create a new logger, with type definition
          *
@@ -213,7 +220,7 @@ namespace Logging
          * @arg registry the Typelib registry which defines the associated type name
          * @arg stream the stream object
          */
-        StreamLogger(std::string const& name, std::string const& type_name, Typelib::Registry const& type_def, std::ostream& stream);
+        StreamLogger(std::string const& name, std::string const& type_name, Typelib::Registry const& type_def, Logfile& file);
 
         /** Registers the sample stream in the output file */
         void registerStream();

@@ -6,6 +6,7 @@
 
 namespace Logging {
     class StreamLogger;
+    class Logfile;
 }
 namespace RTT {
     class EventDrivenActivity;
@@ -21,7 +22,8 @@ namespace logger {
     protected:
 
         Typelib::Registry m_registry;
-        std::ofstream*    m_file;
+        std::ofstream*    m_io;
+        Logging::Logfile* m_file;
     
         bool startHook();
         void updateHook(std::set<RTT::PortInterface*> const& updated_ports);
