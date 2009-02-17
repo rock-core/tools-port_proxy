@@ -50,8 +50,8 @@
  * <table>
  *  <caption>Prologue (12 bytes)</caption>
  *  <tr><td>Offset</td><td>Size</td><td>Field</td></tr>
- *  <tr><td>+0</td><td>7</td><td>POCOSIM</td></tr>
- *  <tr><td>+7</td><td>4</td><td>Format version</td></tr>
+ *  <tr><td>+0</td><td>7</td><td>POCOSIM (see Logging::FORMAT_MAGIC) </td></tr>
+ *  <tr><td>+7</td><td>4</td><td>Format version (currently 2, see Logging::FORMAT_VERSION)</td></tr>
  *  <tr><td>+11</td><td>1</td><td>Endianness (1 = big, 0 = little)</td></tr>
  * </table>
  *
@@ -74,10 +74,10 @@
  *  <caption>Data Stream Declaration Block</caption>
  *  <tr><td>Offset</td><td>Size</td><td>Field</td></tr>
  *  <tr><td>+0  </td><td>1</td><td>Logging::DataStreamType</td></tr>
- *  <tr><td>+1  </td><td>4</td><td>poster name size</td></tr>
- *  <tr><td>+3  </td><td>i</td><td>poster name</td></tr>
- *  <tr><td></td><td>4</td><td>poster type name size</td></tr>
- *  <tr><td></td><td></td><td>poster type name</td></tr>
+ *  <tr><td>+1  </td><td>4</td><td>stream name size</td></tr>
+ *  <tr><td>+3  </td><td>i</td><td>stream name</td></tr>
+ *  <tr><td></td><td>4</td><td>stream type name size</td></tr>
+ *  <tr><td></td><td></td><td>stream type name</td></tr>
  *  <tr><td></td><td>4</td><td>type registry size</td></tr>
  *  <tr><td></td><td></td><td>type registry</td></tr>
  * </table>
@@ -85,10 +85,8 @@
  * <table>
  *  <caption>Sample Block (25 bytes)</caption>
  *  <tr><td>Offset</td><td>Size</td><td>Field</td></tr>
- *  <tr><td>+0 </td><td>4</td><td>real time (type) [IGNORED]</td></tr>
  *  <tr><td>+4 </td><td>4</td><td>real time (sec)</td></tr>
  *  <tr><td>+8 </td><td>4</td><td>real time (usec)</td></tr>
- *  <tr><td>+16</td><td>4</td><td>logical time (type) [IGNORED]</td></tr>
  *  <tr><td>+20</td><td>4</td><td>logical time (sec)</td></tr>
  *  <tr><td>+24</td><td>4</td><td>logical time (usec)</td></tr>
  *  <tr><td>+32</td><td>4</td><td>data size</td></tr>
