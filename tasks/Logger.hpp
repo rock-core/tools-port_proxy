@@ -26,7 +26,7 @@ namespace logger {
         Logging::Logfile* m_file;
     
         bool startHook();
-        void updateHook(std::set<RTT::PortInterface*> const& updated_ports);
+        void updateHook(std::vector<RTT::PortInterface*> const& updated_ports);
         void stopHook();
 
         RTT::EventDrivenActivity* getEventDrivenActivity() const;
