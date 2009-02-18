@@ -5,6 +5,7 @@
 #include <utilmm/stringtools.hh>
 #include <typelib/pluginmanager.hh>
 #include <rtt/EventDrivenActivity.hpp>
+#include <rtt/BufferPort.hpp>
 
 #include "Logfile.hpp"
 #include <fstream>
@@ -51,6 +52,10 @@ bool Logger::startHook()
 
     for (Reports::iterator it = root.begin(); it != root.end(); ++it)
     {
+	RTT::BufferPortBase* buffer_port = dynamic_cast<RTT::BufferPortBase*>(it->port);
+	if (buffer_port)
+		buffer_port->clear();
+
         RTT::TypeInfo const* type_info = it->source->getTypeInfo();
         it->logger = new Logging::StreamLogger(
                 it->name, type_info->getTypeName(), m_registry, *file);
