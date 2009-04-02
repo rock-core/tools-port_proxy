@@ -4,20 +4,29 @@ using_library "typelib"
 using_toolkit "dfki"
 
 task_context "Logger" do
-    data_driven
+    method("reportComponent").
+        argument("name", "std/string", "the name of the component whose ports should be reported")
+    method("unreportComponent").
+        argument("name", "std/string", "the name of the component whose ports should not be reported anymore")
+    method("reportPort").
+        argument("component", "std/string", "the name of the port's component").
+        argument("port", "std/string", "the name of the port that should be reported")
+    method("unreportPort").
+        argument("component", "std/string", "the name of the port's component").
+        argument("port", "std/string", "the name of the port that should not be reported anymore")
 
     property("file", "std/string").
         doc "the output file name"
 end
 
 task_context "LoggerTest" do
-    data_port "time", "DFKI/Time", "w"
-    data_port "scans", "DFKI/LaserReadings", "w"
+    output_port "time", "DFKI/Time"
+    output_port "scans", "DFKI/LaserReadings"
 end
 
 static_deployment do
     test = task("LoggerTest").
-        period(0.2).
+        periodic(0.2).
         start
 
     logger = task("Logger")
@@ -25,14 +34,13 @@ static_deployment do
 
     # Hand-make the data logger setup
     logger_setup = StaticDeployment::Logger.new(component, logger)
-    data_loggers["test.log"] = logger_setup
-    logger_setup.report(test.time, false)
-    logger_setup.report(test.scans, false)
+    loggers["test.log"] = logger_setup
+    logger_setup.report(test.time)
+    logger_setup.report(test.scans)
 
     logger.start
 
-    if !corba_enabled?
-        browse logger
-    end
+    disable_corba
+    browse logger
 end
 

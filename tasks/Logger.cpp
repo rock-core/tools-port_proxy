@@ -4,8 +4,7 @@
 #include <utilmm/configfile/pkgconfig.hh>
 #include <utilmm/stringtools.hh>
 #include <typelib/pluginmanager.hh>
-#include <rtt/EventDrivenActivity.hpp>
-#include <rtt/BufferPort.hpp>
+#include <rtt/PortInterface.hpp>
 
 #include "Logfile.hpp"
 #include <fstream>
@@ -20,8 +19,8 @@ using RTT::endlog;
 using RTT::Error;
 using RTT::Info;
 
-Logger::Logger(std::string const& name)
-    : LoggerBase(name)
+Logger::Logger(std::string const& name, TaskCore::TaskState initial_state)
+    : LoggerBase(name, initial_state)
     , m_file(0)
 {
     loadRegistry();
@@ -33,11 +32,6 @@ Logger::Logger(std::string const& name)
 Logger::~Logger()
 {
     stop();
-}
-
-RTT::EventDrivenActivity* Logger::getEventDrivenActivity() const
-{
-    return dynamic_cast<RTT::EventDrivenActivity*>(engine()->getActivity());
 }
 
 bool Logger::startHook()
@@ -52,11 +46,9 @@ bool Logger::startHook()
 
     for (Reports::iterator it = root.begin(); it != root.end(); ++it)
     {
-	RTT::BufferPortBase* buffer_port = dynamic_cast<RTT::BufferPortBase*>(it->port);
-	if (buffer_port)
-		buffer_port->clear();
+        it->read_port->clear();
 
-        RTT::TypeInfo const* type_info = it->source->getTypeInfo();
+        RTT::TypeInfo const* type_info = it->read_port->getTypeInfo();
         it->logger = new Logging::StreamLogger(
                 it->name, type_info->getTypeName(), m_registry, *file);
     }
@@ -71,15 +63,15 @@ void Logger::updateHook(std::vector<RTT::PortInterface*> const& updated_ports)
     // Execute all copies in one shot to do it as fast as possible
     Time stamp = Time::now();
     for (Reports::iterator it = root.begin(); it != root.end(); ++it)
-        it->reading_command->execute();
+        it->read_command->execute();
 
     for (Reports::iterator it = root.begin(); it != root.end(); ++it)
     {
-        if (find(updated_ports.begin(), updated_ports.end(), it->port) != updated_ports.end())
+        if (find(updated_ports.begin(), updated_ports.end(), it->read_port) != updated_ports.end())
         {
-            TypeInfo const* type_info = it->source->getTypeInfo();
+            TypeInfo const* type_info = it->read_port->getTypeInfo();
             RTT::detail::TypeTransporter* converter = type_info->getProtocol(ORO_UNTYPED_PROTOCOL_ID);
-            vector<uint8_t>* buffer = reinterpret_cast< vector<uint8_t>* >( converter->createBlob(it->dest) );
+            vector<uint8_t>* buffer = reinterpret_cast< vector<uint8_t>* >( converter->createBlob(it->read_source) );
             it->logger->update(stamp, &(*buffer)[0], buffer->size());
             delete buffer;
         }
@@ -99,105 +91,122 @@ void Logger::stopHook()
     m_file = 0;
 }
 
-bool Logger::reportComponent( const std::string& component, bool peek ) { 
+bool Logger::reportComponent( const std::string& component ) { 
     // Users may add own data sources, so avoid duplicates
     //std::vector<std::string> sources                = comp->data()->getNames();
     TaskContext* comp = this->getPeer(component);
     if ( !comp )
     {
-        log(Error) << "Could not report Component " << component <<" : no such peer."<<endlog();
+        log(Error) << "no such component " << component << endlog();
         return false;
     }
 
     Ports ports   = comp->ports()->getPorts();
     for (Ports::iterator it = ports.begin(); it != ports.end() ; ++it)
-        this->reportPort( component, (*it)->getName(), peek );
+        this->reportPort( component, (*it)->getName() );
     return true;
 }
 
 
 bool Logger::unreportComponent( const std::string& component ) {
     TaskContext* comp = this->getPeer(component);
-    if ( !comp )
+    if (!comp)
+    {
+        log(Error) << "no such component " << component << endlog();
         return false;
+    }
 
     Ports ports   = comp->ports()->getPorts();
     for (Ports::iterator it = ports.begin(); it != ports.end() ; ++it) {
-        this->unreportDataSource( component + "." + (*it)->getName() );
-        if ( this->ports()->getPort( (*it)->getName() ) ) {
-        }
+        this->unreportPort(component, (*it)->getName());
     }
     return true;
 }
 
 // report a specific connection.
-bool Logger::reportPort(const std::string& component, const std::string& port, bool peek ) {
+bool Logger::reportPort(const std::string& component, const std::string& port ) {
     TaskContext* comp = this->getPeer(component);
     if ( !comp )
+    {
+        log(Error) << "no such component " << component << endlog();
         return false;
+    }
 
-    RTT::PortInterface* porti   = comp->ports()->getPort(port);
-    if ( !porti )
+    RTT::OutputPortInterface* writer = dynamic_cast<RTT::OutputPortInterface*>(comp->ports()->getPort(port));
+    if ( !writer )
+    {
+        log(Error) << "component " << component << " does not have a port named " << port << ", or it is a read port" << endlog();
         return false;
+    }
 
-    if ( porti->connected() ) {
-        this->reportDataSource( component + "." + port, "Port", porti->connection()->getDataSource(), peek );
-    } else {
-        // create new port temporarily 
-        // this port is only created with the purpose of
-        // creating a connection object.
-        RTT::PortInterface* ourport = porti->antiClone();
-        assert(ourport);
+    PortMap::iterator it = port_map.find(writer);
+    if (it != port_map.end()) // we are already reporting this port
+    {
+        log(Info) << "port " << port << " of component " << component << " is already logged" << endlog();
+        return true;
+    }
 
-        if ( porti->connectTo( ourport ) == false ) {
-            delete ourport;
-            return false;
-        }
+    // Create the corresponding read port
+    RTT::InputPortInterface* reader = static_cast<RTT::InputPortInterface*>(writer->antiClone());
+    reader->setName(component + "." + port);
 
-        RTT::EventDrivenActivity* activity = getEventDrivenActivity();
-        if (activity)
-        {
-            log(Info) << "triggering updates when data is available on " << porti->getName() << endlog();
-            activity->addEvent( porti->getNewDataEvent() );
-        }
+    writer->createBufferConnection(*reader, 5);
+    ports()->addEventPort(reader);
+    it = port_map.insert( make_pair(writer, reader) ).first;
 
-        delete ourport;
-        this->reportDataSource( component + "." + porti->getName(), "Port", porti->connection()->getDataSource(), peek );
-        root.back().port = porti;
+    log(Info) << "triggering updates when data is available on " << writer->getName() << endlog();
+
+    RTT::DataSourceBase::shared_ptr orig = reader->getDataSource();
+    if (! orig->getTypeInfo()->getProtocol(ORO_UNTYPED_PROTOCOL_ID))
+    {
+        log(Error) << "cannot report port " << port << " from component " << component << " as its toolkit has not been generated by Orogen" << endlog();
+        return false;
+    }
+
+    // creates a copy of the data and an update command to
+    // update the copy from the original.
+    RTT::DataSourceBase::shared_ptr clone = orig->getTypeInfo()->buildValue();
+
+    try {
+        boost::shared_ptr<RTT::CommandInterface> comm( clone->updateCommand( orig.get() ) );
+        assert( comm );
+
+        ReportDescription report;
+        report.name         = reader->getName();
+        report.read_source  = clone;
+        report.read_command = comm;
+        report.read_port    = reader;
+        report.logger       = NULL;
+        report.write_port   = writer;
+        root.push_back(report);
+    } catch ( RTT::bad_assignment& ba ) {
+        return false;
     }
     return true;
 }
 
-bool Logger::unreportPort(const std::string& component, const std::string& port ) {
-    return this->unreportDataSource( component + "." + port );
+bool Logger::unreportPort(const std::string& component, const std::string& port )
+{
+    std::string name = component + "." + port;
+    for (Reports::iterator it = root.begin(); it != root.end(); ++it)
+    {
+        if ( it->name == name )
+        {
+            ports()->removePort(name);
+            delete it->read_port;
+            port_map.erase(it->write_port);
+            root.erase(it);
+            return true;
+        }
+    }
+    return false;
 }
 
-// report a specific datasource, property,...
-bool Logger::reportData(const std::string& component,const std::string& dataname, bool peek) 
-{ 
-    TaskContext* comp = this->getPeer(component);
-    if ( !comp )
-        return false;
-
-    // Is it an attribute ?
-    if ( comp->attributes()->getValue( dataname ) )
-        return this->reportDataSource( component + "." + dataname, "Data",
-                comp->attributes()->getValue( dataname )->getDataSource(), peek );
-    // Is it a property ?
-    if ( comp->properties() && comp->properties()->find( dataname ) )
-        return this->reportDataSource( component + "." + dataname, "Data",
-                comp->properties()->find( dataname )->getDataSource(), peek );
-    return false; 
-}
-
-bool Logger::unreportData(const std::string& component,const std::string& datasource) { 
-    return this->unreportDataSource( component +"." + datasource); 
-}
-
-void Logger::snapshot() {
+void Logger::snapshot()
+{
     // execute the copy commands (fast).
     for(Reports::iterator it = root.begin(); it != root.end(); ++it )
-        it->reading_command->execute();
+        it->read_command->execute();
     if( this->engine()->getActivity() )
         this->engine()->getActivity()->trigger();
 }
@@ -231,50 +240,5 @@ void Logger::loadRegistry()
             }
         }
     }
-}
-
-bool Logger::reportDataSource(std::string tag, std::string type, RTT::DataSourceBase::shared_ptr orig, bool peek)
-{
-    orig->setPeeking(peek);
-
-    if (! orig->getTypeInfo()->getProtocol(ORO_UNTYPED_PROTOCOL_ID))
-    {
-        log(Error) << "cannot report " << tag << " as its toolkit has not been generated by Orogen" << endlog();
-        return false;
-    }
-
-    // creates a copy of the data and an update command to
-    // update the copy from the original.
-    RTT::DataSourceBase::shared_ptr clone = orig->getTypeInfo()->buildValue();
-    if ( !clone )
-        return false;
-    try {
-        boost::shared_ptr<RTT::CommandInterface> comm( clone->updateCommand( orig.get() ) );
-        assert( comm );
-
-        ReportDescription report;
-        report.name   = tag;
-        report.source = orig;
-        report.reading_command = comm;
-        report.dest   = clone;
-        report.kind   = type;
-        report.logger = NULL;
-        report.port   = NULL;
-        root.push_back(report);
-    } catch ( RTT::bad_assignment& ba ) {
-        return false;
-    }
-    return true;
-}
-
-bool Logger::unreportDataSource(std::string tag)
-{
-    for (Reports::iterator it = root.begin();
-            it != root.end(); ++it)
-        if ( it->name == tag ) {
-            root.erase(it);
-            return true;
-        }
-    return false;
 }
 

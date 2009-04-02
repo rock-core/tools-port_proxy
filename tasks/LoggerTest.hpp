@@ -14,7 +14,7 @@ namespace logger {
         void updateHook();
 
     public:
-        LoggerTest(std::string const& name = "logger::LoggerTest");
+        LoggerTest(std::string const& name = "logger::LoggerTest", TaskCore::TaskState initial_state = Stopped);
     };
 }
 

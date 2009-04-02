@@ -1,14 +1,16 @@
+include(loggerTaskLib)
+ADD_LIBRARY(${LOGGER_TASKLIB_NAME} SHARED 
+    ${LOGGER_TASKLIB_SOURCES}
+    Logfile.cpp)
 
+TARGET_LINK_LIBRARIES(${LOGGER_TASKLIB_NAME}
+    ${OrocosRTT_LIBRARIES}
+    ${LOGGER_TASKLIB_DEPENDENT_LIBRARIES})
 
-SET(libname logger-tasks-${OROCOS_TARGET})
-ADD_LIBRARY(${libname} SHARED ${CMAKE_SOURCE_DIR}/.orogen/tasks/LoggerBase.cpp Logger.cpp
-     ${CMAKE_SOURCE_DIR}/.orogen/tasks/LoggerTestBase.cpp LoggerTest.cpp
-     Logfile.cpp)
-TARGET_APPEND_LDFLAGS(${libname} "${DEPENDENCIES_LDFLAGS}")
-
-INSTALL(TARGETS ${libname}
+INSTALL(TARGETS ${LOGGER_TASKLIB_NAME}
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib/orocos)
 
-INSTALL(FILES ${CMAKE_SOURCE_DIR}/.orogen/tasks/LoggerBase.cpp Logger.cpp ${CMAKE_SOURCE_DIR}/.orogen/tasks/LoggerBase.hpp Logger.hpp
+INSTALL(FILES ${LOGGER_TASKLIB_HEADERS}
     DESTINATION include/orocos/logger)
+

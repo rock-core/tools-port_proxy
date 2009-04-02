@@ -9,8 +9,8 @@ namespace Logging {
     class Logfile;
 }
 namespace RTT {
-    class EventDrivenActivity;
-    class PortInterface;
+    class InputPortInterface;
+    class OutputPortInterface;
 }
 
 namespace logger {
@@ -18,6 +18,9 @@ namespace logger {
     {
 	friend class LoggerBase;
         static const int ORO_UNTYPED_PROTOCOL_ID = 42;
+
+        typedef std::map<RTT::OutputPortInterface*, RTT::InputPortInterface*> PortMap;
+        PortMap port_map;
 
     protected:
 
@@ -29,16 +32,14 @@ namespace logger {
         void updateHook(std::vector<RTT::PortInterface*> const& updated_ports);
         void stopHook();
 
-        RTT::EventDrivenActivity* getEventDrivenActivity() const;
-
     public:
-        Logger(std::string const& name = "logger::Logger");
+        Logger(std::string const& name = "logger::Logger", TaskCore::TaskState initial_state = Stopped);
         ~Logger();
 
         /**
          * Report all the data ports of a component.
          */
-        bool reportComponent( const std::string& component, bool peek = true );
+        bool reportComponent( const std::string& component );
             
         /**
          * Unreport the data ports of a component.
@@ -48,22 +49,12 @@ namespace logger {
         /**
          * Report a specific data port of a component.
          */
-        bool reportPort(const std::string& component, const std::string& port, bool peek = true );
+        bool reportPort(const std::string& component, const std::string& port );
 
         /**
          * Unreport a specific data port of a component.
          */
         bool unreportPort(const std::string& component, const std::string& port );
-
-        /**
-         * Report a specific data source of a component.
-         */
-        bool reportData(const std::string& component,const std::string& dataname, bool peek = true);
-
-        /**
-         * Unreport a specific data source of a component.
-         */
-        bool unreportData(const std::string& component,const std::string& datasource);
 
         /**
          * This real-time function makes copies of the data to be
@@ -76,12 +67,11 @@ namespace logger {
 
         struct ReportDescription {
             std::string name;
-            RTT::DataSourceBase::shared_ptr source;
-            boost::shared_ptr<RTT::CommandInterface> reading_command;
-            RTT::DataSourceBase::shared_ptr dest;
-            std::string kind;
+            RTT::DataSourceBase::shared_ptr read_source;
+            boost::shared_ptr<RTT::CommandInterface> read_command;
+            RTT::InputPortInterface* read_port;
             Logging::StreamLogger* logger;
-            RTT::PortInterface* port;
+            RTT::OutputPortInterface* write_port;
         };
 
         /**
@@ -91,10 +81,6 @@ namespace logger {
         Reports root;
 
         void loadRegistry();
-
-        bool reportDataSource(std::string tag, std::string type, RTT::DataSourceBase::shared_ptr orig, bool peek = true);
-
-        bool unreportDataSource(std::string tag);
     };
 }
 
