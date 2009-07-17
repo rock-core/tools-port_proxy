@@ -49,8 +49,13 @@ bool Logger::startHook()
         it->read_port->clear();
 
         RTT::TypeInfo const* type_info = it->read_port->getTypeInfo();
+
+        std::string type_name = type_info->getTypeName();
+        if (m_registry.get(type_name + "_m"))
+            type_name += "_m";
+
         it->logger = new Logging::StreamLogger(
-                it->name, type_info->getTypeName(), m_registry, *file);
+                it->name, type_name, m_registry, *file);
     }
 
     m_io   = io.release();
