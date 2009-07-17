@@ -72,6 +72,7 @@ namespace logger {
             RTT::InputPortInterface* read_port;
             Logging::StreamLogger* logger;
             RTT::OutputPortInterface* write_port;
+            std::vector<uint8_t> buffer;
         };
 
         /**

@@ -76,9 +76,8 @@ void Logger::updateHook(std::vector<RTT::PortInterface*> const& updated_ports)
         {
             TypeInfo const* type_info = it->read_port->getTypeInfo();
             RTT::detail::TypeTransporter* converter = type_info->getProtocol(ORO_UNTYPED_PROTOCOL_ID);
-            vector<uint8_t>* buffer = reinterpret_cast< vector<uint8_t>* >( converter->createBlob(it->read_source) );
-            it->logger->update(stamp, &(*buffer)[0], buffer->size());
-            delete buffer;
+            converter->reuseBlob(&(it->buffer), it->read_source);
+            it->logger->update(stamp, &(it->buffer)[0], it->buffer.size());
         }
     }
 }
