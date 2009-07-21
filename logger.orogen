@@ -26,7 +26,9 @@ end
 
 static_deployment do
     test = task("LoggerTest").
-        periodic(0.2).
+        periodic(0.0001).
+        realtime.
+        priority(:highest).
         start
 
     logger = task("Logger")
@@ -37,7 +39,7 @@ static_deployment do
     loggers["test.log"] = logger_setup
     logger_setup.report(test.time)
     logger_setup.report(test.scans)
-
+    logger_setup.triggered
     logger.start
 
     disable_corba
