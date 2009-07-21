@@ -124,6 +124,7 @@ namespace Logging
         uint16_t stream_idx;
         uint32_t data_size;
     };
+    static const int BLOCK_HEADER_SIZE = 8;
 
     struct SampleHeader
     {
@@ -132,6 +133,7 @@ namespace Logging
         uint32_t  data_size;
 	uint8_t   compressed;
     };
+    static const int SAMPLE_HEADER_SIZE = 21;
 
     enum BlockType   
     { 

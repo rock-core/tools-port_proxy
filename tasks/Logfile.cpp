@@ -72,52 +72,33 @@ namespace Logging
 
     int Logfile::newStreamIndex()
     { return m_stream_idx++; }
-    void Logfile::write(std::vector<uint8_t> const& buffer)
-    { m_stream.write(reinterpret_cast<const char*>(&buffer[0]), buffer.size()); }
 
-    OutputStream::OutputStream(Logfile& file)
-        : m_block(UnknownBlockType), m_file(file), m_stream_idx(nstream) { }
-    OutputStream::~OutputStream() {}
-
-    void   OutputStream::newStream() { m_stream_idx = m_file.newStreamIndex(); }
-    size_t OutputStream::getStreamIndex() const { return m_stream_idx; }
-
-    void OutputStream::begin(BlockType block_type)
+    void Logfile::writeStreamDeclaration(int stream_index, StreamType type, std::string const& name, std::string const& type_name, std::string const& type_def)
     {
-        assert(m_block == UnknownBlockType);
-        assert(m_stream_idx != nstream);
+        long payload_size = 1 + 4 + name.size() + 4 + type_name.size();
+        if (!type_def.empty())
+            payload_size += 4 + type_def.size();
 
-        m_buffer.clear();
-        m_block = block_type;
-        BlockHeader block_header = { block_type, 0xFF, m_stream_idx, 0 };
-	*this << block_header;
+        BlockHeader block_header = { StreamBlockType, 0xFF, stream_index, payload_size };
+        *this 
+            << block_header
+            << static_cast<uint8_t>(type)
+            << name
+            << type_name;
+        if (!type_def.empty())
+            *this << type_def;
     }
 
-    void OutputStream::end()
+    void Logfile::writeSample(int stream_index, DFKI::Time const& realtime, DFKI::Time const& logical, void* payload_data, size_t payload_size)
     {
-        assert(m_block != UnknownBlockType);
+        BlockHeader block_header = { DataBlockType, 0xFF, stream_index, SAMPLE_HEADER_SIZE + payload_size };
+        *this << block_header;
 
-        long data_size = m_buffer.size() - sizeof(BlockHeader);
-        reinterpret_cast<BlockHeader*>(&m_buffer[0]) -> data_size = endian::to_little<uint32_t>(data_size);
-        m_file.write(m_buffer);
-        m_block = UnknownBlockType;
+        SampleHeader sample_header = { realtime, logical, payload_size, 0 };
+        *this << sample_header;
+
+        m_stream.write(reinterpret_cast<const char*>(payload_data), payload_size);
     }
-
-    void OutputStream::writeInBuffer(const uint8_t* data, size_t data_size)
-    {
-        assert(m_block != UnknownBlockType);
-
-        int begin = m_buffer.size();
-        m_buffer.resize(m_buffer.size() + data_size);
-        memcpy(&m_buffer[begin], data, data_size);
-    }
-
-    void OutputStream::write(const void* data, size_t data_size)
-    { writeInBuffer( static_cast<const uint8_t*>(data), data_size ); }
-
-
-
-
 
 
 
@@ -130,9 +111,10 @@ namespace Logging
     StreamLogger::StreamLogger(std::string const& name, const std::string& type_name, Logfile& file)
         : m_name(name), m_type_name(type_name)
         , m_type_def()
-        , m_type_size(0), m_stream(file)
+        , m_type_size(0)
+        , m_file(file)
+        , m_stream_idx(file.newStreamIndex())
     { 
-        m_stream.newStream();
         registerStream();
     }
 
@@ -147,9 +129,10 @@ namespace Logging
     StreamLogger::StreamLogger(std::string const& name, const std::string& type_name, Typelib::Registry const& registry, Logfile& file)
         : m_name(name), m_type_name(type_name)
         , m_type_def(Typelib::PluginManager::save("tlb", registry))
-        , m_type_size(getTypeSize(registry, type_name)), m_stream(file)
+        , m_type_size(getTypeSize(registry, type_name))
+        , m_file(file)
+        , m_stream_idx(file.newStreamIndex())
     {
-        m_stream.newStream();
         registerStream();
     }
 
@@ -159,15 +142,7 @@ namespace Logging
 
     void StreamLogger::registerStream()
     {
-
-        m_stream.begin( StreamBlockType );
-            m_stream 
-                << DataStreamType
-                << m_name
-                << m_type_name;
-            if (! m_type_def.empty())
-               m_stream << m_type_def;
-        m_stream.end();
+        m_file.writeStreamDeclaration(m_stream_idx, DataStreamType, m_name, m_type_name, m_type_def);
     }
 
     void StreamLogger::update(const DFKI::Time& timestamp, void* data, size_t size)
@@ -178,12 +153,7 @@ namespace Logging
         if (size == 0)
             size = m_type_size;
 
-        SampleHeader header = { DFKI::Time::now(), timestamp, size, 0 };
-        m_stream.begin( DataBlockType );
-	    m_stream << header;
-            m_stream.write(data, size);
-        m_stream.end();
-
+        m_file.writeSample(m_stream_idx, DFKI::Time::now(), timestamp, data, size);
         m_last = timestamp;
     }
 }

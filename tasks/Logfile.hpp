@@ -48,59 +48,28 @@ namespace Logging
 {
     class Logfile
     {
+        template<class T> friend Logfile& operator << (Logfile& output, const T& value);
+        static const size_t nstream = static_cast<size_t>(-1);
+
         std::ostream& m_stream;
         int m_stream_idx;
 
-    public:
-        Logfile(std::ostream& stream);
-        int newStreamIndex();
-        void write(std::vector<uint8_t> const& buffer);
-    };
-
-    class OutputStream
-    {
-        template<class T> friend OutputStream& operator << (OutputStream& output, const T& value);
-        static const size_t nstream = static_cast<size_t>(-1);
-
     private:
-        BlockType m_block;
-        
-        Logfile& m_file;
-        size_t m_stream_idx;
-        
-        void writeInBuffer(const uint8_t* data, size_t data_size);
-
         template<class T>
-        void writeInBuffer(const T& data) 
+        void write(const T& data) 
         { 
 	    T little_endian = utilmm::endian::to_little(data);
-	    writeInBuffer( reinterpret_cast<const uint8_t*>(&little_endian), sizeof(T) ); 
+	    m_stream.write( reinterpret_cast<const char*>(&little_endian), sizeof(T) ); 
 	}
        
-        typedef std::vector<uint8_t> Buffer;
-        Buffer m_buffer;
 
     public:
-        OutputStream(Logfile& file);
-        ~OutputStream();
+        Logfile(std::ostream& stream);
 
-        /** Start a new stream */
-        void newStream();
+        int newStreamIndex();
 
-        /** Get the stream index */
-        size_t  getStreamIndex() const;
-
-        /** Start a new block in the stream
-         * The block won't be written until end() is called
-         * @arg block_type the block type
-         */
-        void begin(BlockType block_type);
-
-        /** Ends a block and write it into the log file */
-        void end();
-
-        /** Write raw data in the currently opened block */
-        void write(const void* data, size_t data_size);
+        void writeStreamDeclaration(int stream_index, StreamType type, std::string const& name, std::string const& type_name, std::string const& type_def);
+        void writeSample(int stream_index, DFKI::Time const& realtime, DFKI::Time const& logical, void* payload_data, size_t payload_size);
     };
 
     namespace details
@@ -113,35 +82,35 @@ namespace Logging
     void writePrologue(std::ostream& stream);
 
     template<class T>
-    OutputStream& operator << (OutputStream& output, const T& value)
+    Logfile& operator << (Logfile& output, const T& value)
     {
         details::static_check<false> test;
         return output;
     }
 
     template<>
-    inline OutputStream& operator << (OutputStream& output, const uint8_t& value)
-    { output.writeInBuffer(value); return output; }
+    inline Logfile& operator << (Logfile& output, const uint8_t& value)
+    { output.write(value); return output; }
 
     template<>
-    inline OutputStream& operator << (OutputStream& output, const uint16_t& value)
-    { output.writeInBuffer(value); return output; }
+    inline Logfile& operator << (Logfile& output, const uint16_t& value)
+    { output.write(value); return output; }
 
     template<>
-    inline OutputStream& operator << (OutputStream& output, const uint32_t& value)
-    { output.writeInBuffer(value); return output; }
+    inline Logfile& operator << (Logfile& output, const uint32_t& value)
+    { output.write(value); return output; }
 
     template<>
-    inline OutputStream& operator << (OutputStream& output, const std::string& value)
+    inline Logfile& operator << (Logfile& output, const std::string& value)
     {
         uint32_t length(value.length());
-        output.writeInBuffer(length);
-        output.writeInBuffer(reinterpret_cast<const uint8_t*>(value.c_str()), length);
+        output.write(length);
+        output.m_stream.write(reinterpret_cast<const char*>(value.c_str()), length);
         return output;
     }
 
     template<>
-    inline OutputStream& operator << (OutputStream& output, const DFKI::Time& time)
+    inline Logfile& operator << (Logfile& output, const DFKI::Time& time)
     {
 	timeval tv = time.toTimeval();	
 	output << (uint32_t)tv.tv_sec << (uint32_t)tv.tv_usec;
@@ -149,7 +118,7 @@ namespace Logging
     }
 
     template<>
-    inline OutputStream& operator << (OutputStream& output, const BlockHeader& header)
+    inline Logfile& operator << (Logfile& output, const BlockHeader& header)
     {
 	output
 	    << header.type
@@ -160,7 +129,7 @@ namespace Logging
     }
 
     template<>
-    inline OutputStream& operator << (OutputStream& output, const SampleHeader& header)
+    inline Logfile& operator << (Logfile& output, const SampleHeader& header)
     {
 	output
 	    << header.realtime
@@ -171,15 +140,15 @@ namespace Logging
     }
 
     template<>
-    inline OutputStream& operator << (OutputStream& output, const BlockType& type)
+    inline Logfile& operator << (Logfile& output, const BlockType& type)
     { return output << static_cast<uint8_t>(type); }
 
     template<>
-    inline OutputStream& operator << (OutputStream& output, const StreamType& type)
+    inline Logfile& operator << (Logfile& output, const StreamType& type)
     { return output << static_cast<uint8_t>(type); }
 
     template<>
-    inline OutputStream& operator << (OutputStream& output, const CommandType& type)
+    inline Logfile& operator << (Logfile& output, const CommandType& type)
     { return output << static_cast<uint8_t>(type); }
 
 
@@ -191,11 +160,12 @@ namespace Logging
         std::string const m_name;
         std::string const m_type_name;
         std::string const m_type_def;
+        int const m_stream_idx;
         size_t const m_type_size;
         DFKI::Time m_sampling;
         DFKI::Time m_last;
 
-        OutputStream m_stream;
+        Logfile m_file;
 
     public:
         /** Create a new logger, with no type definition
