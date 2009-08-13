@@ -33,7 +33,7 @@ static_deployment do
     logger.file = "test.log"
 
     # Hand-make the data logger setup
-    logger_setup = StaticDeployment::Logger.new(component, logger)
+    logger_setup = StaticDeployment::Logger.new(self, logger)
     loggers["test.log"] = logger_setup
     logger_setup.report(test.time)
     logger_setup.report(test.scans)
