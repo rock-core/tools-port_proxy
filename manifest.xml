@@ -1,0 +1,15 @@
+<package>
+    <description brief="generic data logger component for orogen-generated packages">
+        This software package contains the implementation of a generic
+        high-performance logging component for orogen-generated packages. It is
+        able to log the output ports of orogen components with very little overhead.
+    </description>
+    <author>Sylvain Joyeux/sylvain.joyeux@m4x.org</author>
+    <copyright>
+        DFKI/robotik@dfki.de
+        Sylvain Joyeux/sylvain.joyeux@m4x.org
+    </copyright>
+    <license>GPL v2 or later</license>
+    <url>http://doudou.github.com/orogen</url>
+</package>
+
