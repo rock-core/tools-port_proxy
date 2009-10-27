@@ -24,7 +24,9 @@ task_context "LoggerTest" do
     output_port "scans", "base/LaserReadings"
 end
 
-static_deployment do
+deployment "test_logger" do
+    do_not_install
+
     test = task("LoggerTest").
         periodic(0.0001).
         realtime.
