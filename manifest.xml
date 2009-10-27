@@ -3,6 +3,8 @@
         This software package contains the implementation of a generic
         high-performance logging component for orogen-generated packages. It is
         able to log the output ports of orogen components with very little overhead.
+
+        The generated log file can be read with the pocosim-log Ruby library.
     </description>
     <author>Sylvain Joyeux/sylvain.joyeux@m4x.org</author>
     <copyright>
