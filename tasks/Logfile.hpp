@@ -69,7 +69,7 @@ namespace Logging
         int newStreamIndex();
 
         void writeStreamDeclaration(int stream_index, StreamType type, std::string const& name, std::string const& type_name, std::string const& type_def);
-        void writeSample(int stream_index, DFKI::Time const& realtime, DFKI::Time const& logical, void* payload_data, size_t payload_size);
+        void writeSample(int stream_index, base::Time const& realtime, base::Time const& logical, void* payload_data, size_t payload_size);
     };
 
     namespace details
@@ -110,7 +110,7 @@ namespace Logging
     }
 
     template<>
-    inline Logfile& operator << (Logfile& output, const DFKI::Time& time)
+    inline Logfile& operator << (Logfile& output, const base::Time& time)
     {
 	timeval tv = time.toTimeval();	
 	output << (uint32_t)tv.tv_sec << (uint32_t)tv.tv_usec;
@@ -162,8 +162,8 @@ namespace Logging
         std::string const m_type_def;
         int const m_stream_idx;
         size_t const m_type_size;
-        DFKI::Time m_sampling;
-        DFKI::Time m_last;
+        base::Time m_sampling;
+        base::Time m_last;
 
         Logfile m_file;
 
@@ -198,7 +198,7 @@ namespace Logging
         /** Sets the sampling period. It is used in update() to filter out
          * samples that are too near from each other
          */
-        void setSampling(DFKI::Time const& period);
+        void setSampling(base::Time const& period);
 
         /** Write a sample in the stream. If \c size is given, \c data is
          * assumed to be a buffer of this size (in bytes), regardless of the
@@ -206,7 +206,7 @@ namespace Logging
          * size of the type is used. If the type definition has not been given,
          * it is not possible to use a zero size.
          */
-        void update(const DFKI::Time& timestamp, void* data, size_t size = 0);
+        void update(const base::Time& timestamp, void* data, size_t size = 0);
     };
 }
 

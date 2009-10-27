@@ -33,7 +33,7 @@
 #ifndef OROCOS_LOGGER_H
 #define OROCOS_LOGGER_H
 
-#include <dfki/base_types.h>
+#include <base/time.h>
 #include <stdint.h>
 
 /** Log files are made of blocks. Each block begins with a common block header. 
@@ -128,8 +128,8 @@ namespace Logging
 
     struct SampleHeader
     {
-        DFKI::Time realtime;
-        DFKI::Time timestamp;
+        base::Time realtime;
+        base::Time timestamp;
         uint32_t  data_size;
 	uint8_t   compressed;
     };

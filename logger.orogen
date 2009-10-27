@@ -1,7 +1,7 @@
 name "logger"
 
 using_library "typelib"
-using_toolkit "dfki"
+using_toolkit "base"
 
 task_context "Logger" do
     method("reportComponent").
@@ -20,8 +20,8 @@ task_context "Logger" do
 end
 
 task_context "LoggerTest" do
-    output_port "time", "DFKI/Time"
-    output_port "scans", "DFKI/LaserReadings"
+    output_port "time", "base/Time"
+    output_port "scans", "base/LaserReadings"
 end
 
 static_deployment do

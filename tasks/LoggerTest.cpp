@@ -13,7 +13,7 @@ LoggerTest::LoggerTest(std::string const& name, TaskCore::TaskState initial_stat
 
 void LoggerTest::updateHook()
 {
-    DFKI::Time t = DFKI::Time::now();
+    base::Time t = base::Time::now();
     _time.write(t);
 
     range.stamp = t;

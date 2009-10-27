@@ -89,7 +89,7 @@ namespace Logging
             *this << type_def;
     }
 
-    void Logfile::writeSample(int stream_index, DFKI::Time const& realtime, DFKI::Time const& logical, void* payload_data, size_t payload_size)
+    void Logfile::writeSample(int stream_index, base::Time const& realtime, base::Time const& logical, void* payload_data, size_t payload_size)
     {
         BlockHeader block_header = { DataBlockType, 0xFF, stream_index, SAMPLE_HEADER_SIZE + payload_size };
         *this << block_header;
@@ -136,7 +136,7 @@ namespace Logging
         registerStream();
     }
 
-    void StreamLogger::setSampling(DFKI::Time const& period)
+    void StreamLogger::setSampling(base::Time const& period)
     { m_sampling = period; }
 
 
@@ -145,7 +145,7 @@ namespace Logging
         m_file.writeStreamDeclaration(m_stream_idx, DataStreamType, m_name, m_type_name, m_type_def);
     }
 
-    void StreamLogger::update(const DFKI::Time& timestamp, void* data, size_t size)
+    void StreamLogger::update(const base::Time& timestamp, void* data, size_t size)
     {
         if (!m_last.isNull() && !m_sampling.isNull() && (timestamp - m_last) < m_sampling)
             return;
@@ -153,7 +153,7 @@ namespace Logging
         if (size == 0)
             size = m_type_size;
 
-        m_file.writeSample(m_stream_idx, DFKI::Time::now(), timestamp, data, size);
+        m_file.writeSample(m_stream_idx, base::Time::now(), timestamp, data, size);
         m_last = timestamp;
     }
 }

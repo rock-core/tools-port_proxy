@@ -12,7 +12,7 @@
 using namespace logger;
 using namespace std;
 using namespace Logging;
-using DFKI::Time;
+using base::Time;
 using RTT::TypeInfo;
 using RTT::log;
 using RTT::endlog;
