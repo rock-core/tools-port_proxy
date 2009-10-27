@@ -14,6 +14,10 @@ task_context "Logger" do
     method("unreportPort").
         argument("component", "std/string", "the name of the port's component").
         argument("port", "std/string", "the name of the port that should not be reported anymore")
+    method("createPort").
+	returns("bool").
+        argument("portname", "std/string", "the name of the port to be created").
+        argument("typename", "std/string", "the name of the type the port should handle")
 
     property("file", "std/string").
         doc "the output file name"
@@ -26,7 +30,7 @@ end
 
 static_deployment do
     test = task("LoggerTest").
-        periodic(0.0001).
+        periodic(0.01).
         realtime.
         priority(:highest).
         start

@@ -20,7 +20,6 @@ namespace logger {
         static const int ORO_UNTYPED_PROTOCOL_ID = 42;
 
         typedef std::map<RTT::OutputPortInterface*, RTT::InputPortInterface*> PortMap;
-        PortMap port_map;
 
     protected:
 
@@ -62,6 +61,7 @@ namespace logger {
          */
         void snapshot();
 
+	bool createPort(const std::string &portname, const std::string& type);
     private:
         typedef RTT::DataFlowInterface::Ports Ports;
 
@@ -71,7 +71,6 @@ namespace logger {
             boost::shared_ptr<RTT::CommandInterface> read_command;
             RTT::InputPortInterface* read_port;
             Logging::StreamLogger* logger;
-            RTT::OutputPortInterface* write_port;
             std::vector<uint8_t> buffer;
         };
 
