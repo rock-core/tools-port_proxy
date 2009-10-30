@@ -5,13 +5,17 @@ using_toolkit "dfki"
 
 task_context "Logger" do
     method("reportComponent").
+	returns("bool").
         argument("name", "std/string", "the name of the component whose ports should be reported")
     method("unreportComponent").
+	returns("bool").
         argument("name", "std/string", "the name of the component whose ports should not be reported anymore")
     method("reportPort").
+	returns("bool").
         argument("component", "std/string", "the name of the port's component").
         argument("port", "std/string", "the name of the port that should be reported")
     method("unreportPort").
+	returns("bool").
         argument("component", "std/string", "the name of the port's component").
         argument("port", "std/string", "the name of the port that should not be reported anymore")
     method("createPort").
