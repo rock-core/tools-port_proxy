@@ -16,8 +16,8 @@ task_context "Logger" do
         argument("port", "std/string", "the name of the port that should not be reported anymore")
     method("createPort").
 	returns("bool").
-        argument("portname", "std/string", "the name of the port to be created").
-        argument("typename", "std/string", "the name of the type the port should handle")
+        argument("port_name", "std/string", "the name of the port to be created").
+        argument("type_name", "std/string", "the name of the type the port should handle")
 
     property("file", "std/string").
         doc "the output file name"
