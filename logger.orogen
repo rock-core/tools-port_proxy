@@ -32,14 +32,15 @@ task_context "LoggerTest" do
     output_port "scans", "DFKI/LaserReadings"
 end
 
-static_deployment do
-    test = task("LoggerTest").
+deployment "test" do
+    do_not_install
+    test = task("producer", "LoggerTest").
         periodic(0.01).
         realtime.
         priority(:highest).
         start
 
-    logger = task("Logger")
+    logger = task("logger", "Logger")
     logger.file = "test.log"
 
     # Hand-make the data logger setup
