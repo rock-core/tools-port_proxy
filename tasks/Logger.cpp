@@ -69,7 +69,7 @@ void Logger::updateHook(std::vector<RTT::PortInterface*> const& updated_ports)
     Time stamp = Time::now();
     for (Reports::iterator it = root.begin(); it != root.end(); ++it)
     {
-        while (it->read_command->execute())
+        while (it->read_port->read(it->read_source))
         {
             TypeInfo const* type_info = it->read_port->getTypeInfo();
             RTT::detail::TypeTransporter* converter = type_info->getProtocol(ORO_UNTYPED_PROTOCOL_ID);
@@ -125,13 +125,9 @@ bool Logger::createPort(const std::string& portname, const std::string& typestr)
     RTT::DataSourceBase::shared_ptr clone = orig->getTypeInfo()->buildValue();
 
     try {
-        boost::shared_ptr<RTT::CommandInterface> comm( clone->updateCommand( orig.get() ) );
-        assert( comm );
-
         ReportDescription report;
         report.name         = ip->getName();
         report.read_source  = clone;
-        report.read_command = comm;
         report.read_port    = ip;
         report.logger       = NULL;
         root.push_back(report);
@@ -256,8 +252,6 @@ bool Logger::unreportPort(const std::string& component, const std::string& port 
 void Logger::snapshot()
 {
     // execute the copy commands (fast).
-    for(Reports::iterator it = root.begin(); it != root.end(); ++it )
-        it->read_command->execute();
     if( this->engine()->getActivity() )
         this->engine()->getActivity()->trigger();
 }
