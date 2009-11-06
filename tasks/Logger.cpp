@@ -66,14 +66,10 @@ bool Logger::startHook()
 
 void Logger::updateHook(std::vector<RTT::PortInterface*> const& updated_ports)
 {
-    // Execute all copies in one shot to do it as fast as possible
     Time stamp = Time::now();
     for (Reports::iterator it = root.begin(); it != root.end(); ++it)
-        it->read_command->execute();
-
-    for (Reports::iterator it = root.begin(); it != root.end(); ++it)
     {
-        if (find(updated_ports.begin(), updated_ports.end(), it->read_port) != updated_ports.end())
+        while (it->read_command->execute())
         {
             TypeInfo const* type_info = it->read_port->getTypeInfo();
             RTT::detail::TypeTransporter* converter = type_info->getProtocol(ORO_UNTYPED_PROTOCOL_ID);
@@ -81,7 +77,6 @@ void Logger::updateHook(std::vector<RTT::PortInterface*> const& updated_ports)
             it->logger->update(stamp, &(it->buffer)[0], it->buffer.size());
         }
     }
-
 }
 
 void Logger::stopHook()
