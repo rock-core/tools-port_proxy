@@ -17,8 +17,6 @@ namespace logger {
     class Logger : public LoggerBase
     {
 	friend class LoggerBase;
-        static const int ORO_UNTYPED_PROTOCOL_ID = 42;
-
         typedef std::map<RTT::OutputPortInterface*, RTT::InputPortInterface*> PortMap;
 
     protected:
@@ -67,12 +65,13 @@ namespace logger {
 
         struct ReportDescription {
             std::string name;
+            std::string type_name;
             RTT::DataSourceBase::shared_ptr read_source;
-            boost::shared_ptr<RTT::CommandInterface> read_command;
             RTT::InputPortInterface* read_port;
             Logging::StreamLogger* logger;
             std::vector<uint8_t> buffer;
         };
+        bool addLoggingPort(RTT::InputPortInterface* reader, std::string const& stream_name);
 
         /**
          * Stores the 'datasource' of all reported items as properties.
