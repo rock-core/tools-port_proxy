@@ -5,15 +5,23 @@ using_toolkit "base"
 
 task_context "Logger" do
     method("reportComponent").
+	returns("bool").
         argument("name", "std/string", "the name of the component whose ports should be reported")
     method("unreportComponent").
+	returns("bool").
         argument("name", "std/string", "the name of the component whose ports should not be reported anymore")
     method("reportPort").
+	returns("bool").
         argument("component", "std/string", "the name of the port's component").
         argument("port", "std/string", "the name of the port that should be reported")
     method("unreportPort").
+	returns("bool").
         argument("component", "std/string", "the name of the port's component").
         argument("port", "std/string", "the name of the port that should not be reported anymore")
+    method("createPort").
+	returns("bool").
+        argument("port_name", "std/string", "the name of the port to be created").
+        argument("type_name", "std/string", "the name of the type the port should handle")
 
     property("file", "std/string").
         doc "the output file name"
@@ -27,13 +35,13 @@ end
 deployment "test_logger" do
     do_not_install
 
-    test = task("LoggerTest").
+    test = task("test", "LoggerTest").
         periodic(0.0001).
         realtime.
         priority(:highest).
         start
 
-    logger = task("Logger")
+    logger = task("logger", "Logger")
     logger.file = "test.log"
 
     # Hand-make the data logger setup
