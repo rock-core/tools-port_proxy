@@ -8,7 +8,7 @@ namespace logger {
     {
 	friend class LoggerTestBase;
 
-        base::LaserReadings range;
+        base::samples::LaserScan range;
 
     protected:
         void updateHook();

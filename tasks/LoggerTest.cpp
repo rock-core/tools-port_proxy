@@ -16,7 +16,7 @@ void LoggerTest::updateHook()
     base::Time t = base::Time::now();
     _time.write(t);
 
-    range.stamp = t;
+    range.time = t;
     range.min += 1;
     if (range.min % 5 == 0)
     {

@@ -29,7 +29,7 @@ end
 
 task_context "LoggerTest" do
     output_port "time", "base/Time"
-    output_port "scans", "base/LaserReadings"
+    output_port "scans", "base/samples/LaserScan"
 end
 
 deployment "test_logger" do
