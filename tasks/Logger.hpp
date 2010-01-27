@@ -3,6 +3,7 @@
 
 #include "logger/LoggerBase.hpp"
 #include <typelib/registry.hh>
+#include <rtt/os/MutexLock.hpp>
 
 namespace Logging {
     class StreamLogger;
@@ -21,6 +22,7 @@ namespace logger {
 
     protected:
 
+        RTT::OS::Mutex m_mtx_reports;
         Typelib::Registry m_registry;
         std::ofstream*    m_io;
         Logging::Logfile* m_file;

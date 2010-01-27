@@ -46,6 +46,7 @@ bool Logger::startHook()
     auto_ptr<ofstream> io(new ofstream(_file.value().c_str()));
     auto_ptr<Logfile>  file(new Logfile(*io));
 
+    RTT::OS::MutexLock locker(m_mtx_reports);
     for (Reports::iterator it = root.begin(); it != root.end(); ++it)
     {
         it->read_port->clear();
@@ -59,7 +60,8 @@ bool Logger::startHook()
 }
 
 void Logger::updateHook(std::vector<RTT::PortInterface*> const& updated_ports)
-{
+{ RTT::OS::MutexLock locker(m_mtx_reports);
+
     Time stamp = Time::now();
     for (Reports::iterator it = root.begin(); it != root.end(); ++it)
     {
@@ -69,13 +71,19 @@ void Logger::updateHook(std::vector<RTT::PortInterface*> const& updated_ports)
             orogen_transports::TypelibMarshallerBase* transport =
                 dynamic_cast<orogen_transports::TypelibMarshallerBase*>(type_info->getProtocol(orogen_transports::TYPELIB_MARSHALLER_ID));
             transport->marshal(it->buffer, it->read_source);
+            if (!it->logger)
+            {
+                it->read_port->clear();
+                it->logger = new Logging::StreamLogger(
+                        it->name, it->type_name, m_registry, *m_file);
+            }
             it->logger->update(stamp, &(it->buffer)[0], it->buffer.size());
         }
     }
 }
 
 void Logger::stopHook()
-{
+{ RTT::OS::MutexLock locker(m_mtx_reports);
     for (Reports::iterator it = root.begin(); it != root.end(); ++it)
     {
         delete it->logger;
@@ -202,6 +210,8 @@ bool Logger::addLoggingPort(RTT::InputPortInterface* reader, std::string const& 
         report.read_source  = clone;
         report.read_port    = reader;
         report.logger       = NULL;
+
+        RTT::OS::MutexLock locker(m_mtx_reports);
         root.push_back(report);
     } catch ( RTT::bad_assignment& ba ) {
         return false;
@@ -210,7 +220,8 @@ bool Logger::addLoggingPort(RTT::InputPortInterface* reader, std::string const& 
 }
 
 bool Logger::unreportPort(const std::string& component, const std::string& port )
-{
+{ RTT::OS::MutexLock locker(m_mtx_reports);
+
     std::string name = component + "." + port;
     for (Reports::iterator it = root.begin(); it != root.end(); ++it)
     {
