@@ -5,8 +5,8 @@ using namespace logger;
 LoggerTest::LoggerTest(std::string const& name, TaskCore::TaskState initial_state)
     : LoggerTestBase(name, initial_state)
 {
-    range.min = 0;
-    range.resolution = 0;
+    range.start_angle = 0;
+    range.angular_resolution = 0;
     range.speed = 0;
 }
 
@@ -16,15 +16,18 @@ void LoggerTest::updateHook()
     base::Time t = base::Time::now();
     _time.write(t);
 
-    range.time = t;
-    range.min += 1;
-    if (range.min % 5 == 0)
+    //generate a fake reading every 10 ms
+    if (range.time - t > base::Time(0, 10000))
     {
-        range.resolution += 2;
-        range.speed += 3;
-        range.ranges.resize(range.min);
-        for (int i = 0; i < range.min; ++i)
-            range.ranges[i] = range.min + i;
+	//juste some garbadge scan
+	range.start_angle += 0.1;
+	range.time = t;
+        range.angular_resolution +=0.1;
+        range.speed += 0.2;
+	int scan_count = t.seconds % 1000;
+        range.ranges.resize(scan_count);
+        for (int i = 0; i < scan_count; ++i)
+            range.ranges[i] = scan_count + i;
         _scans.write(range);
     }
         
