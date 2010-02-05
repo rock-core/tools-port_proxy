@@ -38,7 +38,7 @@ deployment "test_logger" do
     test = task("test", "LoggerTest").
         periodic(0.0001).
         realtime.
-        priority(:highest).
+        highest_priority.
         start
 
     logger = task("logger", "Logger")
