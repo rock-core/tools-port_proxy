@@ -8,6 +8,11 @@
 #include <rtt/Types.hpp>
 #include "TypelibMarshaller.hpp"
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+
 #include "Logfile.hpp"
 #include <fstream>
 
@@ -53,8 +58,11 @@ bool Logger::startHook()
 
     // The registry has been loaded on construction
     // Now, create the output file
-    auto_ptr<ofstream> io(new ofstream(_file.value().c_str()));
-    auto_ptr<Logfile>  file(new Logfile(*io));
+    m_io = open(_file.value().c_str(), O_WRONLY | O_CREAT | O_TRUNC);
+    if (m_io == -1)
+        return false;
+
+    auto_ptr<Logfile>  file(new Logfile(m_io));
 
     RTT::OS::MutexLock locker(m_mtx_reports);
     for (Reports::iterator it = root.begin(); it != root.end(); ++it)
@@ -63,7 +71,6 @@ bool Logger::startHook()
                 it->name, it->type_name, m_registry, *file);
     }
 
-    m_io   = io.release();
     m_file = file.release();
     return true;
 }
@@ -83,7 +90,7 @@ void Logger::updateHook(std::vector<RTT::PortInterface*> const& updated_ports)
 
             size_t payload_size = it->typelib_marshaller->getMarshallingSize(it->marshalling_handle);
             it->logger->writeSampleHeader(stamp, payload_size);
-            it->typelib_marshaller->marshal(it->logger->getStream(), it->marshalling_handle);
+            it->typelib_marshaller->marshal(it->logger->getFileDescriptor(), it->marshalling_handle);
         }
     }
 }
@@ -95,8 +102,7 @@ void Logger::stopHook()
         delete it->logger;
         it->logger = 0;
     }
-    delete m_io;
-    m_io = 0;
+    close(m_io);
     delete m_file;
     m_file = 0;
 }
