@@ -21,6 +21,16 @@ using RTT::endlog;
 using RTT::Error;
 using RTT::Info;
 
+struct Logger::ReportDescription
+{
+    std::string name;
+    std::string type_name;
+    orogen_transports::TypelibMarshallerBase* typelib_marshaller;
+    orogen_transports::TypelibMarshallerBase::Handle* marshalling_handle;
+    RTT::InputPortInterface* read_port;
+    Logging::StreamLogger* logger;
+};
+
 Logger::Logger(std::string const& name, TaskCore::TaskState initial_state)
     : LoggerBase(name, initial_state)
     , m_file(0)
@@ -49,7 +59,6 @@ bool Logger::startHook()
     RTT::OS::MutexLock locker(m_mtx_reports);
     for (Reports::iterator it = root.begin(); it != root.end(); ++it)
     {
-        it->read_port->clear();
         it->logger = new Logging::StreamLogger(
                 it->name, it->type_name, m_registry, *file);
     }
@@ -61,23 +70,20 @@ bool Logger::startHook()
 
 void Logger::updateHook(std::vector<RTT::PortInterface*> const& updated_ports)
 { RTT::OS::MutexLock locker(m_mtx_reports);
-
     Time stamp = Time::now();
     for (Reports::iterator it = root.begin(); it != root.end(); ++it)
     {
-        while (it->read_port->read(it->read_source))
+        while (it->typelib_marshaller->readPort(*it->read_port, it->marshalling_handle))
         {
-            TypeInfo const* type_info = it->read_port->getTypeInfo();
-            orogen_transports::TypelibMarshallerBase* transport =
-                dynamic_cast<orogen_transports::TypelibMarshallerBase*>(type_info->getProtocol(orogen_transports::TYPELIB_MARSHALLER_ID));
-            transport->marshal(it->buffer, it->read_source);
             if (!it->logger)
             {
-                it->read_port->clear();
                 it->logger = new Logging::StreamLogger(
                         it->name, it->type_name, m_registry, *m_file);
             }
-            it->logger->update(stamp, &(it->buffer)[0], it->buffer.size());
+
+            size_t payload_size = it->typelib_marshaller->getMarshallingSize(it->marshalling_handle);
+            it->logger->writeSampleHeader(stamp, payload_size);
+            it->typelib_marshaller->marshal(it->logger->getStream(), it->marshalling_handle);
         }
     }
 }
@@ -188,9 +194,7 @@ bool Logger::addLoggingPort(RTT::InputPortInterface* reader, std::string const& 
 {
     ports()->addEventPort(reader);
 
-    RTT::DataSourceBase::shared_ptr orig = reader->getDataSource();
-
-    TypeInfo const* type = orig->getTypeInfo();
+    TypeInfo const* type = reader->getTypeInfo();
     orogen_transports::TypelibMarshallerBase* transport =
         dynamic_cast<orogen_transports::TypelibMarshallerBase*>(type->getProtocol(orogen_transports::TYPELIB_MARSHALLER_ID));
     if (! transport)
@@ -199,16 +203,13 @@ bool Logger::addLoggingPort(RTT::InputPortInterface* reader, std::string const& 
         return false;
     }
 
-    // creates a copy of the data and an update command to
-    // update the copy from the original.
-    RTT::DataSourceBase::shared_ptr clone = orig->getTypeInfo()->buildValue();
-
     try {
         ReportDescription report;
         report.name         = reader->getName();
         report.type_name    = transport->getMarshallingType();
-        report.read_source  = clone;
         report.read_port    = reader;
+        report.marshalling_handle = transport->createSample();
+        report.typelib_marshaller = transport;
         report.logger       = NULL;
 
         RTT::OS::MutexLock locker(m_mtx_reports);

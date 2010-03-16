@@ -66,9 +66,12 @@ namespace Logging
     public:
         Logfile(std::ostream& stream);
 
+        std::ostream& getStream();
+
         int newStreamIndex();
 
         void writeStreamDeclaration(int stream_index, StreamType type, std::string const& name, std::string const& type_name, std::string const& type_def);
+        void writeSampleHeader(int stream_index, base::Time const& realtime, base::Time const& logical, size_t size);
         void writeSample(int stream_index, base::Time const& realtime, base::Time const& logical, void* payload_data, size_t payload_size);
     };
 
@@ -200,13 +203,9 @@ namespace Logging
          */
         void setSampling(base::Time const& period);
 
-        /** Write a sample in the stream. If \c size is given, \c data is
-         * assumed to be a buffer of this size (in bytes), regardless of the
-         * size of the associated type. If size is zero (the default), the
-         * size of the type is used. If the type definition has not been given,
-         * it is not possible to use a zero size.
-         */
-        void update(const base::Time& timestamp, void* data, size_t size = 0);
+        bool writeSampleHeader(const base::Time& timestamp, size_t size);
+
+        std::ostream& getStream();
     };
 }
 

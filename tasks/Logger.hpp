@@ -5,6 +5,9 @@
 #include <typelib/registry.hh>
 #include <rtt/os/MutexLock.hpp>
 
+namespace orogen_transports {
+    class TypelibMarshallerBase;
+}
 namespace Logging {
     class StreamLogger;
     class Logfile;
@@ -65,14 +68,7 @@ namespace logger {
     private:
         typedef RTT::DataFlowInterface::Ports Ports;
 
-        struct ReportDescription {
-            std::string name;
-            std::string type_name;
-            RTT::DataSourceBase::shared_ptr read_source;
-            RTT::InputPortInterface* read_port;
-            Logging::StreamLogger* logger;
-            std::vector<uint8_t> buffer;
-        };
+        struct ReportDescription;
         bool addLoggingPort(RTT::InputPortInterface* reader, std::string const& stream_name);
 
         /**

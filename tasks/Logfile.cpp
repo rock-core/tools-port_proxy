@@ -89,20 +89,22 @@ namespace Logging
             *this << type_def;
     }
 
-    void Logfile::writeSample(int stream_index, base::Time const& realtime, base::Time const& logical, void* payload_data, size_t payload_size)
+    void Logfile::writeSampleHeader(int stream_index, base::Time const& realtime, base::Time const& logical, size_t payload_size)
     {
         BlockHeader block_header = { DataBlockType, 0xFF, stream_index, SAMPLE_HEADER_SIZE + payload_size };
         *this << block_header;
 
         SampleHeader sample_header = { realtime, logical, payload_size, 0 };
         *this << sample_header;
+    }
 
+    void Logfile::writeSample(int stream_index, base::Time const& realtime, base::Time const& logical, void* payload_data, size_t payload_size)
+    {
+        writeSampleHeader(stream_index, realtime, logical, payload_size);
         m_stream.write(reinterpret_cast<const char*>(payload_data), payload_size);
     }
 
-
-
-
+    std::ostream& Logfile::getStream() { return m_stream; }
 
 
 
@@ -145,17 +147,19 @@ namespace Logging
         m_file.writeStreamDeclaration(m_stream_idx, DataStreamType, m_name, m_type_name, m_type_def);
     }
 
-    void StreamLogger::update(const base::Time& timestamp, void* data, size_t size)
+    std::ostream& StreamLogger::getStream()
+    { return m_file.getStream(); }
+
+    bool StreamLogger::writeSampleHeader(const base::Time& timestamp, size_t size)
     {
         if (!m_last.isNull() && !m_sampling.isNull() && (timestamp - m_last) < m_sampling)
-            return;
+            return false;
 
         if (size == 0)
             size = m_type_size;
 
-        m_file.writeSample(m_stream_idx, base::Time::now(), timestamp, data, size);
+        m_file.writeSampleHeader(m_stream_idx, base::Time::now(), timestamp, size);
         m_last = timestamp;
     }
 }
-
 
