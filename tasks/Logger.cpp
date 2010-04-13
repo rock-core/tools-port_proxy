@@ -58,7 +58,7 @@ bool Logger::startHook()
 
     // The registry has been loaded on construction
     // Now, create the output file
-    m_io = open(_file.value().c_str(), O_WRONLY | O_CREAT | O_TRUNC);
+    m_io = open(_file.value().c_str(), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
     if (m_io == -1)
         return false;
 
