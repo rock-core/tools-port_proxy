@@ -18,10 +18,16 @@ task_context "Logger" do
 	returns("bool").
         argument("component", "std/string", "the name of the port's component").
         argument("port", "std/string", "the name of the port that should not be reported anymore")
-    method("createPort").
+    method("createLoggingPort").
 	returns("bool").
         argument("port_name", "std/string", "the name of the port to be created").
-        argument("type_name", "std/string", "the name of the type the port should handle")
+        argument("type_name", "std/string", "the name of the type the port should handle").
+        doc("creates a port that is associated with a given log stream of the same name. Any data written to that port will be logged into that stream")
+
+    method("removeLoggingPort").
+	returns("bool").
+        argument("port_name", "std/string", "the name of the port to be removed").
+        doc("removes a logging port created by createLoggingPort")
 
     property("file", "std/string").
         doc "the output file name"
@@ -35,24 +41,7 @@ end
 deployment "test_logger" do
     do_not_install
 
-    test = task("test", "LoggerTest").
-        periodic(0.0001).
-        realtime.
-        highest_priority.
-        start
-
-    logger = task("logger", "Logger")
-    logger.file = "test.log"
-
-    # Hand-make the data logger setup
-    logger_setup = StaticDeployment::Logger.new(self, logger)
-    loggers["test.log"] = logger_setup
-    logger_setup.report(test.time)
-    logger_setup.report(test.scans)
-    logger_setup.triggered
-    logger.start
-
-    disable_corba
-    browse logger
+    task("test", "LoggerTest")
+    task("logger", "Logger")
 end
 

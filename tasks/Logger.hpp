@@ -64,7 +64,9 @@ namespace logger {
          */
         void snapshot();
 
-	bool createPort(const std::string &portname, const std::string& type);
+	bool createLoggingPort(const std::string &port_name, const std::string& type_name);
+        bool removeLoggingPort(std::string const& stream_name);
+
     private:
         typedef RTT::DataFlowInterface::Ports Ports;
 

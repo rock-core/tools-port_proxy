@@ -6,7 +6,7 @@
 #include <typelib/pluginmanager.hh>
 #include <rtt/PortInterface.hpp>
 #include <rtt/Types.hpp>
-#include "TypelibMarshaller.hpp"
+#include "TypelibMarshallerBase.hpp"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -108,7 +108,7 @@ void Logger::stopHook()
 }
 
 
-bool Logger::createPort(const std::string& portname, const std::string& typestr)
+bool Logger::createLoggingPort(const std::string& portname, const std::string& typestr)
 {
     RTT::TypeInfoRepository::shared_ptr ti = RTT::TypeInfoRepository::Instance();
     RTT::TypeInfo* type = ti->type(typestr);
@@ -226,6 +226,24 @@ bool Logger::addLoggingPort(RTT::InputPortInterface* reader, std::string const& 
     return true;
 }
 
+bool Logger::removeLoggingPort(std::string const& port_name)
+{
+    for (Reports::iterator it = root.begin(); it != root.end(); ++it)
+    {
+        if ( it->read_port->getName() == port_name )
+        {
+            ports()->removePort(port_name);
+            delete it->read_port;
+            it->typelib_marshaller->deleteHandle(it->marshalling_handle);
+            delete it->logger;
+            root.erase(it);
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool Logger::unreportPort(const std::string& component, const std::string& port )
 { RTT::OS::MutexLock locker(m_mtx_reports);
 
@@ -234,9 +252,7 @@ bool Logger::unreportPort(const std::string& component, const std::string& port 
     {
         if ( it->name == name )
         {
-            ports()->removePort(name);
-            delete it->read_port;
-            root.erase(it);
+            removeLoggingPort(it->read_port->getName());
             return true;
         }
     }

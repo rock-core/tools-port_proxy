@@ -1,0 +1,85 @@
+#! /usr/bin/env ruby
+
+require 'orocos'
+require 'fileutils'
+
+ENV['PKG_CONFIG_PATH'] = File.expand_path("../build", File.dirname(__FILE__)) + ":#{ENV['PKG_CONFIG_PATH']}"
+Orocos.initialize
+
+FileUtils.rm_f "test.idx"
+
+Orocos.run 'test_logger' do
+    logger = Orocos::TaskContext.get "logger"
+
+    if (logger.createLoggingPort("scans", "bla"))
+        raise "logger.createLoggingPort returned true on a non-existing type name"
+    end
+
+    if (!logger.createLoggingPort("scans", "/base/samples/LaserScan"))
+        raise "logger.createLoggingPort returned false on /base/samples/LaserScan"
+    end
+
+    if (logger.createLoggingPort("scans", "/base/samples/LaserScan"))
+        raise "logger.createLoggingPort allowed a duplicate port creation"
+    end
+
+    begin
+        logger.start
+        raise "logger is expected to refuse to start if file is not set"
+    rescue Orocos::StateTransitionFailed
+    end
+
+    logger.file = "test.log"
+    logger.start
+
+    writer = logger.port('scans').writer(:type => :buffer, :size => 1)
+    10.times do
+        start_point = Integer(rand * 1000)
+        step        = Integer(rand * 100)
+
+        sample = writer.new_sample
+        sample.time.seconds = start_point
+        sample.time.microseconds = step
+        500.times do |i|
+            sample.ranges.insert(start_point + i * step)
+        end
+
+        writer.write(sample)
+        sleep(0.05)
+    end
+    logger.stop
+
+    # Should in general not do it while the module is running. OK here, as we
+    # know we don't push data
+    if (!logger.removeLoggingPort('scans'))
+        raise "deleteLoggingPort returned false"
+    end
+    if (logger.has_port?('scans'))
+        raise "deleteLoggingPort did not remove the port"
+    end
+
+end
+
+# Now, read the result
+require 'simlog'
+logfile = Pocosim::Logfiles.new(File.open('test.log'))
+samples = logfile.stream('scans').samples.to_a
+if samples.size != 10
+    raise "wrong sample count"
+end
+
+samples.each do |time, _, s|
+    start_point = s.time.seconds
+    step        = s.time.microseconds
+    if s.ranges.size != 500
+        raise "expected 500 ranges, got #{s.ranges.size}"
+    end
+    ranges = s.ranges.to_a
+    500.times do |i|
+        expected = start_point + step * i
+        if ranges[i] != expected
+            raise "expected #{expected}, got #{ranges[i]} at range #{i} for sample at #{time.to_hms}"
+        end
+    end
+end
+
