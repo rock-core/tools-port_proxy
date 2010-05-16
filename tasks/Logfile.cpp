@@ -47,7 +47,7 @@ BOOST_STATIC_ASSERT(( sizeof(Logging::Prologue) == 16 ));
 
 const char Logging::FORMAT_MAGIC[] = "POCOSIM";
 
-void Logging::writePrologue(int fd)
+void Logging::writePrologue(std::ostream& stream)
 {
     Prologue prologue;
     prologue.version    = endian::to_little<uint32_t>(Logging::FORMAT_VERSION);
@@ -57,17 +57,17 @@ void Logging::writePrologue(int fd)
     prologue.flags = 0;
 #endif
 
-    write(fd, reinterpret_cast<char*>(&prologue), sizeof(prologue));
+    stream.write(reinterpret_cast<char*>(&prologue), sizeof(prologue));
 }
 
 
 namespace Logging
 {
-    Logfile::Logfile(int fd)
-        : m_fd(fd)
+    Logfile::Logfile(std::ostream& stream)
+        : m_stream(stream)
         , m_stream_idx(0)
     {
-        writePrologue(fd);
+        writePrologue(stream);
     }
 
     int Logfile::newStreamIndex()
@@ -101,10 +101,10 @@ namespace Logging
     void Logfile::writeSample(int stream_index, base::Time const& realtime, base::Time const& logical, void* payload_data, size_t payload_size)
     {
         writeSampleHeader(stream_index, realtime, logical, payload_size);
-        ::write(m_fd, reinterpret_cast<const char*>(payload_data), payload_size);
+        m_stream.write(reinterpret_cast<const char*>(payload_data), payload_size);
     }
 
-    int Logfile::getFileDescriptor() const { return m_fd; }
+    std::ostream& Logfile::getStream() { return m_stream; }
 
 
 
@@ -147,8 +147,8 @@ namespace Logging
         m_file.writeStreamDeclaration(m_stream_idx, DataStreamType, m_name, m_type_name, m_type_def);
     }
 
-    int StreamLogger::getFileDescriptor() const
-    { return m_file.getFileDescriptor(); }
+    std::ostream& StreamLogger::getStream()
+    { return m_file.getStream(); }
 
     bool StreamLogger::writeSampleHeader(const base::Time& timestamp, size_t size)
     {

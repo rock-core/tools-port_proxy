@@ -27,7 +27,7 @@ namespace logger {
 
         RTT::OS::Mutex m_mtx_reports;
         Typelib::Registry m_registry;
-        int  m_io;
+        std::ofstream*    m_io;
         Logging::Logfile* m_file;
     
         bool startHook();

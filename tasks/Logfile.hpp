@@ -51,7 +51,7 @@ namespace Logging
         template<class T> friend Logfile& operator << (Logfile& output, const T& value);
         static const size_t nstream = static_cast<size_t>(-1);
 
-        int m_fd;
+        std::ostream& m_stream;
         int m_stream_idx;
 
     private:
@@ -59,14 +59,14 @@ namespace Logging
         void write(const T& data) 
         { 
 	    T little_endian = utilmm::endian::to_little(data);
-	    ::write(m_fd, reinterpret_cast<const char*>(&little_endian), sizeof(T) ); 
+	    m_stream.write( reinterpret_cast<const char*>(&little_endian), sizeof(T) ); 
 	}
        
 
     public:
-        Logfile(int fd);
+        Logfile(std::ostream& stream);
 
-        int getFileDescriptor() const;
+        std::ostream& getStream();
 
         int newStreamIndex();
 
@@ -82,7 +82,7 @@ namespace Logging
     }
 
     /** Writes the file prologue */
-    void writePrologue(int fd);
+    void writePrologue(std::ostream& stream);
 
     template<class T>
     Logfile& operator << (Logfile& output, const T& value)
@@ -108,7 +108,7 @@ namespace Logging
     {
         uint32_t length(value.length());
         output.write(length);
-        write(output.m_fd, reinterpret_cast<const char*>(value.c_str()), length);
+        output.m_stream.write(reinterpret_cast<const char*>(value.c_str()), length);
         return output;
     }
 
@@ -205,7 +205,7 @@ namespace Logging
 
         bool writeSampleHeader(const base::Time& timestamp, size_t size);
 
-        int getFileDescriptor() const;
+        std::ostream& getStream();
     };
 }
 
