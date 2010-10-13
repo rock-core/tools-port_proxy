@@ -160,6 +160,7 @@ namespace Logging
 
         m_file.writeSampleHeader(m_stream_idx, base::Time::now(), timestamp, size);
         m_last = timestamp;
+        return true;
     }
 }
 
