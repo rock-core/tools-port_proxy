@@ -114,8 +114,8 @@ namespace Logging
         : m_name(name), m_type_name(type_name)
         , m_type_def()
         , m_type_size(0)
-        , m_file(file)
         , m_stream_idx(file.newStreamIndex())
+        , m_file(file)
     { 
         registerStream();
     }
