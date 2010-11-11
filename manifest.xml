@@ -14,8 +14,7 @@
     </copyright>
   <license>GPL v2 or later</license>
   <url>http://doudou.github.com/orogen</url>
-  <depend package="orocos/base"/>
-  <depend package="orocos/orogen"/>
-  <depend package="orocos/rtt"/>
+  <depend package="modules/base"/>
+  <depend package="orogen"/>
   <depend package="typelib"/>
 </package>

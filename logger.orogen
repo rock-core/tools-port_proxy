@@ -1,30 +1,35 @@
 name "logger"
 
 using_library "typelib"
-using_toolkit "base"
+import_types_from "base"
+
+# Special stuff, to get the TypelibMarshallerBase.hpp header from the orogen
+# template directory itself.
+typelib_marshaller = Orocos::Generation.render_template 'typekit', 'typelib', 'TypelibMarshallerBase.hpp', binding
+Orocos::Generation.save_automatic 'TypelibMarshallerBase.hpp', typelib_marshaller
 
 task_context "Logger" do
-    method("reportComponent").
+    operation("reportComponent").
 	returns("bool").
         argument("name", "std/string", "the name of the component whose ports should be reported")
-    method("unreportComponent").
+    operation("unreportComponent").
 	returns("bool").
         argument("name", "std/string", "the name of the component whose ports should not be reported anymore")
-    method("reportPort").
+    operation("reportPort").
 	returns("bool").
         argument("component", "std/string", "the name of the port's component").
         argument("port", "std/string", "the name of the port that should be reported")
-    method("unreportPort").
+    operation("unreportPort").
 	returns("bool").
         argument("component", "std/string", "the name of the port's component").
         argument("port", "std/string", "the name of the port that should not be reported anymore")
-    method("createLoggingPort").
+    operation("createLoggingPort").
 	returns("bool").
         argument("port_name", "std/string", "the name of the port to be created").
         argument("type_name", "std/string", "the name of the type the port should handle").
         doc("creates a port that is associated with a given log stream of the same name. Any data written to that port will be logged into that stream")
 
-    method("removeLoggingPort").
+    operation("removeLoggingPort").
 	returns("bool").
         argument("port_name", "std/string", "the name of the port to be removed").
         doc("removes a logging port created by createLoggingPort")

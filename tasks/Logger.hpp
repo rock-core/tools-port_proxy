@@ -13,25 +13,24 @@ namespace Logging {
     class Logfile;
 }
 namespace RTT {
-    class InputPortInterface;
-    class OutputPortInterface;
+    namespace base {
+        class InputPortInterface;
+    }
 }
 
 namespace logger {
     class Logger : public LoggerBase
     {
 	friend class LoggerBase;
-        typedef std::map<RTT::OutputPortInterface*, RTT::InputPortInterface*> PortMap;
 
     protected:
 
-        RTT::OS::Mutex m_mtx_reports;
         Typelib::Registry m_registry;
         std::ofstream*    m_io;
         Logging::Logfile* m_file;
     
         bool startHook();
-        void updateHook(std::vector<RTT::PortInterface*> const& updated_ports);
+        void updateHook();
         void stopHook();
 
     public:
@@ -71,7 +70,7 @@ namespace logger {
         typedef RTT::DataFlowInterface::Ports Ports;
 
         struct ReportDescription;
-        bool addLoggingPort(RTT::InputPortInterface* reader, std::string const& stream_name);
+        bool addLoggingPort(RTT::base::InputPortInterface* reader, std::string const& stream_name);
 
         /**
          * Stores the 'datasource' of all reported items as properties.

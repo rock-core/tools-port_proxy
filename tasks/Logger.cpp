@@ -4,9 +4,11 @@
 #include <utilmm/configfile/pkgconfig.hh>
 #include <utilmm/stringtools.hh>
 #include <typelib/pluginmanager.hh>
-#include <rtt/PortInterface.hpp>
-#include <rtt/Types.hpp>
+#include <rtt/base/PortInterface.hpp>
+#include <rtt/types/Types.hpp>
 #include "TypelibMarshallerBase.hpp"
+
+#include <rtt/base/InputPortInterface.hpp>
 
 #include "Logfile.hpp"
 #include <fstream>
@@ -15,7 +17,7 @@ using namespace logger;
 using namespace std;
 using namespace Logging;
 using base::Time;
-using RTT::TypeInfo;
+using RTT::types::TypeInfo;
 using RTT::log;
 using RTT::endlog;
 using RTT::Error;
@@ -27,7 +29,8 @@ struct Logger::ReportDescription
     std::string type_name;
     orogen_transports::TypelibMarshallerBase* typelib_marshaller;
     orogen_transports::TypelibMarshallerBase::Handle* marshalling_handle;
-    RTT::InputPortInterface* read_port;
+    RTT::base::DataSourceBase::shared_ptr sample;
+    RTT::base::InputPortInterface* read_port;
     Logging::StreamLogger* logger;
 };
 
@@ -56,7 +59,6 @@ bool Logger::startHook()
     auto_ptr<ofstream> io(new ofstream(_file.value().c_str()));
     auto_ptr<Logfile>  file(new Logfile(*io));
 
-    RTT::OS::MutexLock locker(m_mtx_reports);
     for (Reports::iterator it = root.begin(); it != root.end(); ++it)
     {
         it->logger = new Logging::StreamLogger(
@@ -68,13 +70,14 @@ bool Logger::startHook()
     return true;
 }
 
-void Logger::updateHook(std::vector<RTT::PortInterface*> const& updated_ports)
-{ RTT::OS::MutexLock locker(m_mtx_reports);
+void Logger::updateHook()
+{
     Time stamp = Time::now();
     for (Reports::iterator it = root.begin(); it != root.end(); ++it)
     {
-        while (it->typelib_marshaller->readPort(*it->read_port, it->marshalling_handle))
+        while (it->read_port->read(it->sample) == RTT::NewData)
         {
+            it->typelib_marshaller->refreshTypelibSample(it->marshalling_handle);
             if (!it->logger)
             {
                 it->logger = new Logging::StreamLogger(
@@ -89,7 +92,7 @@ void Logger::updateHook(std::vector<RTT::PortInterface*> const& updated_ports)
 }
 
 void Logger::stopHook()
-{ RTT::OS::MutexLock locker(m_mtx_reports);
+{
     for (Reports::iterator it = root.begin(); it != root.end(); ++it)
     {
         delete it->logger;
@@ -104,27 +107,26 @@ void Logger::stopHook()
 
 bool Logger::createLoggingPort(const std::string& portname, const std::string& typestr)
 {
-    RTT::TypeInfoRepository::shared_ptr ti = RTT::TypeInfoRepository::Instance();
-    RTT::TypeInfo* type = ti->type(typestr);
+    RTT::types::TypeInfoRepository::shared_ptr ti = RTT::types::TypeInfoRepository::Instance();
+    RTT::types::TypeInfo* type = ti->type(typestr);
     if (! type)
     {
 	cerr << "cannot find " << typestr << " in the type info repository" << endl;
 	return false;
     }
     
-    RTT::PortInterface *pi = ports()->getPort(portname);
-    
+    RTT::base::PortInterface *pi = ports()->getPort(portname);
     if(pi) {
-	cerr << "port with name " << portname << " allready exist in task" << endl;
+	cerr << "port with name " << portname << " already exists" << endl;
 	return false;
     }
 
-    RTT::InputPortInterface *ip= type->inputPort(portname);
+    RTT::base::InputPortInterface *ip= type->inputPort(portname);
     return addLoggingPort(ip, portname);
 }
 
 
-bool Logger::reportComponent( const std::string& component ) { 
+bool Logger::reportComponent( const std::string& component ) {
     // Users may add own data sources, so avoid duplicates
     //std::vector<std::string> sources                = comp->data()->getNames();
     TaskContext* comp = this->getPeer(component);
@@ -165,7 +167,7 @@ bool Logger::reportPort(const std::string& component, const std::string& port ) 
         return false;
     }
 
-    RTT::OutputPortInterface* writer = dynamic_cast<RTT::OutputPortInterface*>(comp->ports()->getPort(port));
+    RTT::base::OutputPortInterface* writer = dynamic_cast<RTT::base::OutputPortInterface*>(comp->ports()->getPort(port));
     if ( !writer )
     {
         log(Error) << "component " << component << " does not have a port named " << port << ", or it is a read port" << endlog();
@@ -174,7 +176,7 @@ bool Logger::reportPort(const std::string& component, const std::string& port ) 
 
     
     std::string portname(component + "." + port);
-    RTT::PortInterface *pi = ports()->getPort(portname);
+    RTT::base::PortInterface *pi = ports()->getPort(portname);
     
     if(pi) // we are already reporting this port
     {
@@ -183,16 +185,16 @@ bool Logger::reportPort(const std::string& component, const std::string& port ) 
     }
 
     // Create the corresponding read port
-    RTT::InputPortInterface* reader = static_cast<RTT::InputPortInterface*>(writer->antiClone());
+    RTT::base::InputPortInterface* reader = static_cast<RTT::base::InputPortInterface*>(writer->antiClone());
     reader->setName(portname);
     writer->createBufferConnection(*reader, 5);
 
     return addLoggingPort(reader, portname);
 }
 
-bool Logger::addLoggingPort(RTT::InputPortInterface* reader, std::string const& stream_name)
+bool Logger::addLoggingPort(RTT::base::InputPortInterface* reader, std::string const& stream_name)
 {
-    ports()->addEventPort(reader);
+    ports()->addEventPort(reader->getName(), *reader);
 
     TypeInfo const* type = reader->getTypeInfo();
     orogen_transports::TypelibMarshallerBase* transport =
@@ -210,11 +212,11 @@ bool Logger::addLoggingPort(RTT::InputPortInterface* reader, std::string const& 
         report.read_port    = reader;
         report.marshalling_handle = transport->createSample();
         report.typelib_marshaller = transport;
+        report.sample = transport->getDataSource(report.marshalling_handle);
         report.logger       = NULL;
 
-        RTT::OS::MutexLock locker(m_mtx_reports);
         root.push_back(report);
-    } catch ( RTT::bad_assignment& ba ) {
+    } catch ( RTT::internal::bad_assignment& ba ) {
         return false;
     }
     return true;
@@ -239,7 +241,7 @@ bool Logger::removeLoggingPort(std::string const& port_name)
 }
 
 bool Logger::unreportPort(const std::string& component, const std::string& port )
-{ RTT::OS::MutexLock locker(m_mtx_reports);
+{
 
     std::string name = component + "." + port;
     for (Reports::iterator it = root.begin(); it != root.end(); ++it)
