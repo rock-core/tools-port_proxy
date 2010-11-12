@@ -1,7 +1,9 @@
 include(loggerTaskLib)
+include_directories(${CMAKE_SOURCE_DIR}/.orogen/tasks)
 ADD_LIBRARY(${LOGGER_TASKLIB_NAME} SHARED 
     ${LOGGER_TASKLIB_SOURCES}
-    Logfile.cpp)
+    Logfile.cpp
+    ${CMAKE_SOURCE_DIR}/.orogen/tasks/TypelibMarshallerBase.cpp)
 
 TARGET_LINK_LIBRARIES(${LOGGER_TASKLIB_NAME}
     ${OrocosRTT_LIBRARIES}

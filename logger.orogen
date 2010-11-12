@@ -6,7 +6,11 @@ import_types_from "base"
 # Special stuff, to get the TypelibMarshallerBase.hpp header from the orogen
 # template directory itself.
 typelib_marshaller = Orocos::Generation.render_template 'typekit', 'typelib', 'TypelibMarshallerBase.hpp', binding
-Orocos::Generation.save_automatic 'TypelibMarshallerBase.hpp', typelib_marshaller
+Orocos::Generation.save_automatic 'tasks', 'TypelibMarshallerBase.hpp', typelib_marshaller
+typelib_marshaller = Orocos::Generation.render_template 'typekit', 'typelib', 'TypelibMarshallerBase.cpp', binding
+Orocos::Generation.save_automatic 'tasks', 'TypelibMarshallerBase.cpp', typelib_marshaller
+typelib_marshaller = Orocos::Generation.render_template 'typekit', 'typelib', 'TypelibMarshaller.hpp', binding
+Orocos::Generation.save_automatic 'tasks', 'TypelibMarshaller.hpp', typelib_marshaller
 
 task_context "Logger" do
     operation("reportComponent").
