@@ -113,8 +113,8 @@ namespace Logging
     StreamLogger::StreamLogger(std::string const& name, const std::string& type_name, Logfile& file)
         : m_name(name), m_type_name(type_name)
         , m_type_def()
-        , m_type_size(0)
         , m_stream_idx(file.newStreamIndex())
+        , m_type_size(0)
         , m_file(file)
     { 
         registerStream();
@@ -131,9 +131,9 @@ namespace Logging
     StreamLogger::StreamLogger(std::string const& name, const std::string& type_name, Typelib::Registry const& registry, Logfile& file)
         : m_name(name), m_type_name(type_name)
         , m_type_def(Typelib::PluginManager::save("tlb", registry))
+        , m_stream_idx(file.newStreamIndex())
         , m_type_size(getTypeSize(registry, type_name))
         , m_file(file)
-        , m_stream_idx(file.newStreamIndex())
     {
         registerStream();
     }
