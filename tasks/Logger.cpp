@@ -36,6 +36,7 @@ struct Logger::ReportDescription
 
 Logger::Logger(std::string const& name, TaskCore::TaskState initial_state)
     : LoggerBase(name, initial_state)
+    , m_registry(0)
     , m_file(0)
 {
     loadRegistry();
@@ -46,7 +47,7 @@ Logger::Logger(std::string const& name, TaskCore::TaskState initial_state)
 
 Logger::~Logger()
 {
-    stop();
+    delete m_registry;
 }
 
 bool Logger::startHook()
@@ -62,7 +63,7 @@ bool Logger::startHook()
     for (Reports::iterator it = root.begin(); it != root.end(); ++it)
     {
         it->logger = new Logging::StreamLogger(
-                it->name, it->type_name, m_registry, *file);
+                it->name, it->type_name, *m_registry, *file);
     }
 
     m_io   = io.release();
@@ -81,7 +82,7 @@ void Logger::updateHook()
             if (!it->logger)
             {
                 it->logger = new Logging::StreamLogger(
-                        it->name, it->type_name, m_registry, *m_file);
+                        it->name, it->type_name, *m_registry, *m_file);
             }
 
             size_t payload_size = it->typelib_marshaller->getMarshallingSize(it->marshalling_handle);
@@ -268,6 +269,8 @@ void Logger::snapshot()
 void Logger::loadRegistry()
 {
     string const pattern = TASK_LIBRARY_NAME_PATTERN;
+    delete m_registry;
+    m_registry = new Typelib::Registry;
 
     // List all known toolkits and load the ones that have a .tlb file defined.
     list<string> packages = utilmm::pkgconfig::packages();
@@ -281,7 +284,7 @@ void Logger::loadRegistry()
             {
                 try {
                     auto_ptr<Typelib::Registry> registry( Typelib::PluginManager::load("tlb", tlb) );
-                    m_registry.merge(*registry.get());
+                    m_registry->merge(*registry.get());
                     log(Info) << "loaded " << tlb << " in the data logger registry" << endlog();
                 }
                 catch(...)

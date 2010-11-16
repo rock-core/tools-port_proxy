@@ -2,7 +2,6 @@
 #define LOGGER_LOGGER_TASK_HPP
 
 #include "logger/LoggerBase.hpp"
-#include <typelib/registry.hh>
 #include <rtt/os/MutexLock.hpp>
 
 namespace orogen_transports {
@@ -11,6 +10,9 @@ namespace orogen_transports {
 namespace Logging {
     class StreamLogger;
     class Logfile;
+}
+namespace Typelib {
+    class Registry;
 }
 namespace RTT {
     namespace base {
@@ -25,9 +27,9 @@ namespace logger {
 
     protected:
 
-        Typelib::Registry m_registry;
-        std::ofstream*    m_io;
-        Logging::Logfile* m_file;
+        Typelib::Registry* m_registry;
+        std::ofstream*     m_io;
+        Logging::Logfile*  m_file;
     
         bool startHook();
         void updateHook();
