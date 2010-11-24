@@ -14,7 +14,7 @@
     </copyright>
   <license>GPL v2 or later</license>
   <url>http://doudou.github.com/orogen</url>
-  <depend package="modules/base"/>
+  <depend package="base/orogen/types"/>
   <depend package="orogen"/>
   <depend package="typelib"/>
 </package>
