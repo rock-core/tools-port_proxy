@@ -15,6 +15,10 @@ if !imported?
 end
 
 task_context "Logger" do
+    dynamic_input_port(/\w+\.\w+/, nil).
+        needs_reliable_connection.
+        task_trigger
+
     operation("reportComponent").
 	returns("bool").
         argument("name", "std/string", "the name of the component whose ports should be reported")
