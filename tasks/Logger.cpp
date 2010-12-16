@@ -264,7 +264,7 @@ void Logger::snapshot()
 }
 
 #define TASK_LIBRARY_NAME_PATTERN_aux0(target) #target
-#define TASK_LIBRARY_NAME_PATTERN_aux(target) "-toolkit-" TASK_LIBRARY_NAME_PATTERN_aux0(target)
+#define TASK_LIBRARY_NAME_PATTERN_aux(target) "-typekit-" TASK_LIBRARY_NAME_PATTERN_aux0(target)
 #define TASK_LIBRARY_NAME_PATTERN TASK_LIBRARY_NAME_PATTERN_aux(OROCOS_TARGET)
 void Logger::loadRegistry()
 {
