@@ -27,6 +27,7 @@ struct Logger::ReportDescription
 {
     std::string name;
     std::string type_name;
+    Typelib::Registry* registry;
     orogen_transports::TypelibMarshallerBase* typelib_marshaller;
     orogen_transports::TypelibMarshallerBase::Handle* marshalling_handle;
     RTT::base::DataSourceBase::shared_ptr sample;
@@ -63,7 +64,7 @@ bool Logger::startHook()
     for (Reports::iterator it = root.begin(); it != root.end(); ++it)
     {
         it->logger = new Logging::StreamLogger(
-                it->name, it->type_name, *m_registry, *file);
+                it->name, it->type_name, *(it->registry), *file);
     }
 
     m_io   = io.release();
@@ -217,6 +218,7 @@ bool Logger::addLoggingPort(RTT::base::InputPortInterface* reader, std::string c
         report.name         = reader->getName();
         report.type_name    = transport->getMarshallingType();
         report.read_port    = reader;
+        report.registry     = m_registry->minimal(report.type_name);
         report.marshalling_handle = transport->createSample();
         report.typelib_marshaller = transport;
         report.sample = transport->getDataSource(report.marshalling_handle);
@@ -239,6 +241,7 @@ bool Logger::removeLoggingPort(std::string const& port_name)
             delete it->read_port;
             it->typelib_marshaller->deleteHandle(it->marshalling_handle);
             delete it->logger;
+            delete it->registry;
             root.erase(it);
             return true;
         }
