@@ -17,4 +17,5 @@
   <depend package="base/orogen/types"/>
   <depend package="orogen"/>
   <depend package="typelib"/>
+  <tags>stable</tags>
 </package>
