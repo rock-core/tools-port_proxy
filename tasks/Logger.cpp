@@ -189,7 +189,7 @@ bool Logger::reportPort(const std::string& component, const std::string& port ) 
     // Create the corresponding read port
     RTT::base::InputPortInterface* reader = static_cast<RTT::base::InputPortInterface*>(writer->antiClone());
     reader->setName(portname);
-    writer->createBufferConnection(*reader, 5);
+    writer->createBufferConnection(*reader, 25);
 
     return addLoggingPort(reader, portname);
 }
