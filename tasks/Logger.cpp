@@ -77,7 +77,7 @@ void Logger::updateHook()
     Time stamp = Time::now();
     for (Reports::iterator it = root.begin(); it != root.end(); ++it)
     {
-        while (it->read_port->read(it->sample) == RTT::NewData)
+        while (it->read_port->read(it->sample, false) == RTT::NewData)
         {
             it->typelib_marshaller->refreshTypelibSample(it->marshalling_handle);
             if (!it->logger)
