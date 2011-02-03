@@ -6,7 +6,7 @@
 #include <typelib/pluginmanager.hh>
 #include <rtt/base/PortInterface.hpp>
 #include <rtt/types/Types.hpp>
-#include "TypelibMarshallerBase.hpp"
+#include <rtt/typelib/TypelibMarshallerBase.hpp>
 
 #include <rtt/base/InputPortInterface.hpp>
 
