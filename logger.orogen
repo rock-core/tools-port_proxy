@@ -3,6 +3,9 @@ name "logger"
 using_library "typelib"
 import_types_from "base"
 
+# Can't define default deployments, as we are part of them !
+self.define_default_deployments = false
+
 task_context "Logger" do
     dynamic_input_port(/\w+\.\w+/, nil).
         needs_reliable_connection.
