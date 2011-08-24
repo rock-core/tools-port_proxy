@@ -2,9 +2,11 @@ name "logger"
 
 using_library "typelib"
 import_types_from "base"
+import_types_from "LoggerTypes.hpp"
 
 # Can't define default deployments, as we are part of them !
 self.define_default_deployments = false
+
 
 task_context "Logger" do
     dynamic_input_port(/\w+\.\w+/, nil).
@@ -38,6 +40,10 @@ task_context "Logger" do
 
     property("file", "std/string").
         doc "the output file name"
+end
+
+typekit do
+	export_types '/logger/Marker'
 end
 
 task_context "LoggerTest" do
