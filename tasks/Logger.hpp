@@ -39,6 +39,12 @@ namespace logger {
         Logger(std::string const& name = "logger::Logger", TaskCore::TaskState initial_state = Stopped);
         ~Logger();
 
+        /* Handler for the createLoggingPort operation
+         */
+        virtual bool createLoggingPort(::std::string const & port_name,
+                ::std::string const & type_name,
+                ::std::vector< ::logger::StreamMetadata > const & metadata);
+
         /**
          * Report all the data ports of a component.
          */
@@ -65,7 +71,6 @@ namespace logger {
          */
         void snapshot();
 
-	bool createLoggingPort(const std::string &port_name, const std::string& type_name);
         bool removeLoggingPort(std::string const& stream_name);
 
     private:
@@ -73,6 +78,7 @@ namespace logger {
 
         struct ReportDescription;
         bool addLoggingPort(RTT::base::InputPortInterface* reader, std::string const& stream_name);
+        bool addLoggingPort(RTT::base::InputPortInterface* reader, std::string const& stream_name, std::vector<logger::StreamMetadata> const& metadata);
 
         /**
          * Stores the 'datasource' of all reported items as properties.

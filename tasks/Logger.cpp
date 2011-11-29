@@ -30,6 +30,7 @@ struct Logger::ReportDescription
     Typelib::Registry* registry;
     orogen_transports::TypelibMarshallerBase* typelib_marshaller;
     orogen_transports::TypelibMarshallerBase::Handle* marshalling_handle;
+    std::vector<logger::StreamMetadata> metadata;
     RTT::base::DataSourceBase::shared_ptr sample;
     RTT::base::InputPortInterface* read_port;
     Logging::StreamLogger* logger;
@@ -64,7 +65,7 @@ bool Logger::startHook()
     for (Reports::iterator it = root.begin(); it != root.end(); ++it)
     {
         it->logger = new Logging::StreamLogger(
-                it->name, it->type_name, *(it->registry), *file);
+                it->name, it->type_name, *(it->registry), it->metadata, *file);
     }
 
     m_io   = io.release();
@@ -83,7 +84,7 @@ void Logger::updateHook()
             if (!it->logger)
             {
                 it->logger = new Logging::StreamLogger(
-                        it->name, it->type_name, *m_registry, *m_file);
+                        it->name, it->type_name, *m_registry, it->metadata, *m_file);
             }
 
             size_t payload_size = it->typelib_marshaller->getMarshallingSize(it->marshalling_handle);
@@ -100,14 +101,15 @@ void Logger::stopHook()
         delete it->logger;
         it->logger = 0;
     }
-    delete m_io;
-    m_io = 0;
+    m_io->flush();
     delete m_file;
     m_file = 0;
+    delete m_io;
+    m_io = 0;
 }
 
 
-bool Logger::createLoggingPort(const std::string& portname, const std::string& typestr)
+bool Logger::createLoggingPort(const std::string& portname, const std::string& typestr, std::vector<logger::StreamMetadata> const& metadata)
 {
     RTT::types::TypeInfoRepository::shared_ptr ti = RTT::types::TypeInfoRepository::Instance();
     RTT::types::TypeInfo* type = ti->type(typestr);
@@ -124,7 +126,7 @@ bool Logger::createLoggingPort(const std::string& portname, const std::string& t
     }
 
     RTT::base::InputPortInterface *ip= type->inputPort(portname);
-    return addLoggingPort(ip, portname);
+    return addLoggingPort(ip, portname, metadata);
 }
 
 
@@ -196,6 +198,11 @@ bool Logger::reportPort(const std::string& component, const std::string& port ) 
 
 bool Logger::addLoggingPort(RTT::base::InputPortInterface* reader, std::string const& stream_name)
 {
+    std::vector<logger::StreamMetadata> metadata;
+    return addLoggingPort(reader, stream_name, metadata);
+}
+bool Logger::addLoggingPort(RTT::base::InputPortInterface* reader, std::string const& stream_name, std::vector<logger::StreamMetadata> const& metadata)
+{
     TypeInfo const* type = reader->getTypeInfo();
     orogen_transports::TypelibMarshallerBase* transport =
         dynamic_cast<orogen_transports::TypelibMarshallerBase*>(type->getProtocol(orogen_transports::TYPELIB_MARSHALLER_ID));
@@ -221,6 +228,7 @@ bool Logger::addLoggingPort(RTT::base::InputPortInterface* reader, std::string c
         report.registry     = m_registry->minimal(report.type_name);
         report.marshalling_handle = transport->createSample();
         report.typelib_marshaller = transport;
+        report.metadata = metadata;
         report.sample = transport->getDataSource(report.marshalling_handle);
         report.logger       = NULL;
 
