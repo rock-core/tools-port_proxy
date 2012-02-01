@@ -1,0 +1,31 @@
+name "port_proxy"
+
+using_library "typelib"
+import_types_from "base"
+
+# Can't define default deployments, as we are part of them !
+self.define_default_deployments = false
+
+task_context "Task" do
+    dynamic_input_port(/\w+\.\w+/, nil).
+        needs_reliable_connection.
+        task_trigger
+
+    operation("createProxyConnection").
+        returns("bool").
+        argument("name", "std/string", "the name of the port that should be created, will create input and output port 'in_<name>', 'out_<name>").
+        argument("type_name","std/string", "Typelib type of the connection").
+        argument("periodicity", "double", "Periodicity which will be used to pull data from the data connection")
+
+    operation("closeProxyConnection").
+        returns("bool").
+        argument("name", "std/string", "the name of the proxy-connection that should be closed")
+
+    operation("closeAllProxyConnection").
+        returns("bool")
+end
+
+deployment "rock_port_proxy" do
+    task("port_proxy", "port_proxy::Task").
+        periodic('0.01')
+end

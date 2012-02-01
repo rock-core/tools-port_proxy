@@ -1,8 +1,8 @@
-PROJECT(logger)
+PROJECT(port_proxy)
 cmake_minimum_required(VERSION 2.6)
 
 SET (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/.orogen/config")
-INCLUDE(loggerBase)
+INCLUDE(port_proxyBase)
 
 # FIND_PACKAGE(KDL)
 # FIND_PACKAGE(OCL)
