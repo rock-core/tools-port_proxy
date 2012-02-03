@@ -38,8 +38,7 @@ namespace port_proxy {
 	friend class TaskBase;
 
     protected:
-        Typelib::Registry* m_registry;
-
+        bool loadTypekit(std::string const& name);
         /* Handler for the closeAllProxyConnection operation
          */
         virtual bool closeAllProxyConnection();
@@ -144,8 +143,6 @@ namespace port_proxy {
          */
         typedef std::vector<ConnectionDescription> Connections;
         Connections root;
-
-        void loadRegistry();
     };
 }
 

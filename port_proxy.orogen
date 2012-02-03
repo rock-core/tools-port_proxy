@@ -1,15 +1,15 @@
 name "port_proxy"
 
-using_library "typelib"
 import_types_from "base"
-
-# Can't define default deployments, as we are part of them !
-self.define_default_deployments = false
 
 task_context "Task" do
     dynamic_input_port(/\w+\.\w+/, nil).
         needs_reliable_connection.
         task_trigger
+
+    operation('loadTypekit').
+        returns('bool').
+        argument('name', 'std/string', 'the name of the typekit that should be loaded')
 
     operation("createProxyConnection").
         returns("bool").
