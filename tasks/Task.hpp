@@ -4,10 +4,6 @@
 
 #include "port_proxy/TaskBase.hpp"
 
-namespace orogen_transports {
-    class TypelibMarshallerBase;
-}
-
 namespace Typelib {
     class Registry;
 }
