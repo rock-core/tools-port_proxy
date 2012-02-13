@@ -23,6 +23,8 @@ task_context "Task" do
 
     operation("closeAllProxyConnection").
         returns("bool")
+
+    periodic('0.01')
 end
 
 deployment "rock_port_proxy" do
