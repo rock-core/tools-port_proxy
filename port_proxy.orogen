@@ -24,10 +24,10 @@ task_context "Task" do
     operation("closeAllProxyConnection").
         returns("bool")
 
-    periodic('0.01')
+    periodic(0.01)
 end
 
 deployment "rock_port_proxy" do
     task("port_proxy", "port_proxy::Task").
-        periodic('0.01')
+        periodic(0.01)
 end
