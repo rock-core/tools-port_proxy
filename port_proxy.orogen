@@ -15,7 +15,8 @@ task_context "Task" do
         returns("bool").
         argument("name", "std/string", "the name of the port that should be created, will create input and output port 'in_<name>', 'out_<name>").
         argument("type_name","std/string", "Typelib type of the connection").
-        argument("periodicity", "double", "Periodicity which will be used to pull data from the data connection")
+        argument("periodicity", "double", "Periodicity which will be used to pull data from the data connection").
+        argument("keep_last_value", "bool", "Whether the proxy should setup the output port to keep the last value. Needed to proxy connection where init is set to true")
 
     operation("closeProxyConnection").
         returns("bool").
