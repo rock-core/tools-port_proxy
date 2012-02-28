@@ -62,12 +62,16 @@ void Task::updateHook()
     for (Connections::iterator it = root.begin(); it != root.end(); ++it)
     {
         // Check on periodicity 
-        if(it->period_counter++ >= it->period_max_count)
+        if(it->period_counter == -1 || it->period_counter++ >= it->period_max_count)
         {
-            it->period_counter = 0;
-            if(it->read_port->read(it->sample, false) == RTT::NewData)
+            RTT::FlowStatus status = it->read_port->read(it->sample, (it->period_counter == -1));
+            if(status == RTT::NoData)
+                continue;
+
+            if(it->period_counter == -1 || status == RTT::NewData)
             {
                 it->write_port->write(it->sample);
+                it->period_counter = 0;
             }
         }
     }
@@ -83,7 +87,7 @@ bool Task::loadTypekit(std::string const& name)
 }
 
 // report a specific connection.
-bool Task::createProxyConnection(const std::string& name, const std::string& type_name, double periodicity) {
+bool Task::createProxyConnection(const std::string& name, const std::string& type_name, double periodicity, bool keep_last_value) {
 
     std::string input_port_name("in_" + name);
     std::string output_port_name("out_" + name);
@@ -107,16 +111,17 @@ bool Task::createProxyConnection(const std::string& name, const std::string& typ
     
     RTT::base::InputPortInterface *in_port = type->inputPort(input_port_name);
     RTT::base::OutputPortInterface *out_port = type->outputPort(output_port_name); 
-    return addProxyConnection(in_port, out_port, name, periodicity);
+    return addProxyConnection(in_port, out_port, name, periodicity, keep_last_value);
 }
 
-bool Task::addProxyConnection(RTT::base::InputPortInterface* in_port, RTT::base::OutputPortInterface* out_port, std::string const& name, double periodicity)
+bool Task::addProxyConnection(RTT::base::InputPortInterface* in_port, RTT::base::OutputPortInterface* out_port, std::string const& name, double periodicity, bool keep_last_value)
 {
     TypeInfo const* type = in_port->getTypeInfo();
 
     // Add ports to the current task
     ports()->addPort(in_port->getName(), *in_port);
     ports()->addPort(out_port->getName(), *out_port);
+    out_port->keepLastWrittenValue(keep_last_value);
 
     try {
         ConnectionDescription connection;
@@ -135,7 +140,7 @@ bool Task::addProxyConnection(RTT::base::InputPortInterface* in_port, RTT::base:
         // Currently assuming the core periodicity will be low enough 
         // to support a resolution of 0.1 s
         connection.period_max_count = periodicity / taskPeriodicity;
-        connection.period_counter = 0;
+        connection.period_counter = -1;
 
         log(Info) << "adding connection period count for '" << name << "' to " << connection.period_max_count << " while having a base period of " << taskPeriodicity << "s" << endlog();
 

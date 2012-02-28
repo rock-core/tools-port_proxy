@@ -43,7 +43,7 @@ namespace port_proxy {
         virtual bool closeProxyConnection(::std::string const & name);
         /* Handler for the createProxyConnection operation
          */
-        virtual bool createProxyConnection(::std::string const & name, ::std::string const & type_name, double periodicity);
+        virtual bool createProxyConnection(::std::string const & name, ::std::string const & type_name, double periodicity, bool keep_last_value);
 
     public:
         /** TaskContext constructor for Task
@@ -132,7 +132,7 @@ namespace port_proxy {
         bool addProxyConnection(RTT::base::InputPortInterface* inputPort
                 , RTT::base::OutputPortInterface* outputPort
                 , std::string const& stream_name
-                , double periodicity);
+                , double periodicity, bool keep_last_value);
 
         /**
          * Stores the 'datasource' of all connections as properties.
