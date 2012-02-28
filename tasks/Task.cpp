@@ -65,14 +65,12 @@ void Task::updateHook()
         if(it->period_counter == -1 || it->period_counter++ >= it->period_max_count)
         {
             RTT::FlowStatus status = it->read_port->read(it->sample, (it->period_counter == -1));
+            it->period_counter = 0;
             if(status == RTT::NoData)
                 continue;
 
             if(it->period_counter == -1 || status == RTT::NewData)
-            {
                 it->write_port->write(it->sample);
-                it->period_counter = 0;
-            }
         }
     }
 }
