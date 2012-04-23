@@ -103,7 +103,7 @@ bool Task::createProxyConnection(const std::string& name, const std::string& typ
     RTT::types::TypeInfo* type = ti->type(type_name);
     if (! type)
     {
-	cerr << "cannot find " << type_name << " in the type info repository" << endl;
+	log(Error) << "cannot find " << type_name << " in the type info repository" << endlog();
 	return false;
     }
     
