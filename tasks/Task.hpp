@@ -37,13 +37,26 @@ namespace port_proxy {
         bool loadTypekit(std::string const& name);
         /* Handler for the closeAllProxyConnection operation
          */
-        virtual bool closeAllProxyConnection();
+        virtual bool closeAllProxyConnections();
+
         /* Handler for the closeProxyConnection operation
          */
-        virtual bool closeProxyConnection(::std::string const & name);
+        virtual bool closeProxyConnection(std::string const& task_name,std::string const& port_name);
+
         /* Handler for the createProxyConnection operation
          */
-        virtual bool createProxyConnection(::std::string const & name, ::std::string const & type_name, double periodicity, bool keep_last_value);
+        virtual bool createProxyConnection(::port_proxy::ProxyConnection const & proxy_connection);
+
+        /* Handler for the checkProxyConnection operation
+         */
+        virtual bool checkProxyConnection(::std::string const & task_name, ::std::string const & port_name);
+
+        /* Handler for the isConnected operation
+         */
+        virtual bool isConnected(::std::string const & task_name, ::std::string const & port_name);
+        virtual bool isProxingPort(::std::string const & task_name, ::std::string const & port_name);
+        virtual std::string getInputPortName(::std::string const & task_name, ::std::string const & port_name);
+        virtual std::string getOutputPortName(::std::string const & task_name, ::std::string const & port_name);
 
     public:
         /** TaskContext constructor for Task
@@ -122,18 +135,9 @@ namespace port_proxy {
         // void cleanupHook();
 
     private:
-        typedef RTT::DataFlowInterface::Ports Ports;
-
         struct ConnectionDescription;
 
-        /**
-         * Add a proxy connection
-         */
-        bool addProxyConnection(RTT::base::InputPortInterface* inputPort
-                , RTT::base::OutputPortInterface* outputPort
-                , std::string const& stream_name
-                , double periodicity, bool keep_last_value);
-
+        bool checkProxyConnection(ConnectionDescription &connection);
         /**
          * Stores the 'datasource' of all connections as properties.
          */
