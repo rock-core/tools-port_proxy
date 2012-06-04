@@ -125,6 +125,7 @@ class TaskProxyTest < Test::Unit::TestCase
                 #check connection
                 sleep(0.5)
                 assert(task.isConnected("test_task","out_dummy_port"))
+                reader.read
                 writer = task2.in_dummy_port.writer
                 time = Time.now
                 writer.write time
