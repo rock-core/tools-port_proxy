@@ -1,11 +1,15 @@
 name "port_proxy"
 
 import_types_from "base"
+import_types_from "PortProxyTypes.hpp"
 
 task_context "Task" do
     dynamic_input_port(/\w+\.\w+/, nil).
         needs_reliable_connection.
         task_trigger
+
+    property("timeout","double",10.0).
+        doc("timeout in seconds after a proxy connection will be deleted if no consumer is connected.")
 
     operation('loadTypekit').
         returns('bool').
@@ -13,16 +17,41 @@ task_context "Task" do
 
     operation("createProxyConnection").
         returns("bool").
-        argument("name", "std/string", "the name of the port that should be created, will create input and output port 'in_<name>', 'out_<name>").
-        argument("type_name","std/string", "Typelib type of the connection").
-        argument("periodicity", "double", "Periodicity which will be used to pull data from the data connection").
-        argument("keep_last_value", "bool", "Whether the proxy should setup the output port to keep the last value. Needed to proxy connection where init is set to true")
+        argument("proxy_connection", "port_proxy/ProxyConnection", "Parameter of the connection")
 
     operation("closeProxyConnection").
         returns("bool").
-        argument("name", "std/string", "the name of the proxy-connection that should be closed")
+        argument("task_name", "std/string", "the name of the remote task.").
+        argument("port_name", "std/string", "the name of remote port.")
 
-    operation("closeAllProxyConnection").
+    #Do not call this method. This is only for testing
+    #otherwise the caller might block use isConnected
+    operation("checkProxyConnection").
+        returns("bool").
+        argument("task_name", "std/string", "the name of the remote task.").
+        argument("port_name", "std/string", "the name of remote port.")
+
+    operation("isConnected").
+        returns("bool").
+        argument("task_name", "std/string", "the name of the remote task.").
+        argument("port_name", "std/string", "the name of remote port.")
+
+    operation("isProxingPort").
+        returns("bool").
+        argument("task_name", "std/string", "the name of the remote task.").
+        argument("port_name", "std/string", "the name of remote port.")
+
+    operation("getOutputPortName").
+        returns("std/string").
+        argument("task_name", "std/string", "the name of the remote task.").
+        argument("port_name", "std/string", "the name of remote port.")
+
+    operation("getInputPortName").
+        returns("std/string").
+        argument("task_name", "std/string", "the name of the remote task.").
+        argument("port_name", "std/string", "the name of remote port.")
+
+    operation("closeAllProxyConnections").
         returns("bool")
 
     periodic(0.01)
