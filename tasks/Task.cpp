@@ -15,6 +15,7 @@ using RTT::Error;
 using RTT::Info;
 using RTT::Debug;
 
+
 namespace  port_proxy
 {
 
@@ -49,6 +50,8 @@ struct Task::ConnectionDescription
     // the proxy connection will be closed
     unsigned int delete_period_max_count;
     unsigned int delete_period_counter;
+
+    bool was_connected;
 };
 
 Task::Task(std::string const& name, TaskCore::TaskState initial_state)
@@ -116,7 +119,16 @@ bool Task::checkProxyConnection(ConnectionDescription &connection)
 {
     log(Debug) << "checking connection to " << connection.task_name << "." << connection.port_name <<  endlog();
     if(connection.read_port->connected())
+    {
+        connection.was_connected = true;
         return true;
+    }
+
+    if(connection.was_connected == true)
+    {
+        connection.was_connected = false;
+        connection.write_port->disconnect();
+    }
 
     //get remote task
     bool result = false;
@@ -140,7 +152,7 @@ bool Task::checkProxyConnection(ConnectionDescription &connection)
         }
 
         //set up connection
-        RTT::ConnPolicy policy = RTT::ConnPolicy::data(RTT::ConnPolicy::LOCK_FREE,false,true);
+        RTT::ConnPolicy policy = RTT::ConnPolicy::data(RTT::ConnPolicy::LOCK_FREE,true,true);
         result = remote_port->connectTo(connection.read_port,policy);
         if(result)
         {
@@ -179,7 +191,7 @@ void Task::updateHook()
         
         // read new data
         it->period_counter = 0;
-        if(it->read_port->read(it->sample, false) == RTT::NewData)
+        if(it->write_port->connected() && it->read_port->read(it->sample, false) == RTT::NewData)
         {
             it->write_port->write(it->sample);
             it->check_period_counter = 0;
@@ -237,6 +249,7 @@ bool Task::createProxyConnection(::port_proxy::ProxyConnection const & proxy_con
         connection.port_name = proxy_connection.port_name;
         connection.read_port    = in_port;
         connection.write_port   = out_port; 
+        connection.was_connected = false;
 
         TypeInfo const* type = in_port->getTypeInfo();
         connection.sample = type->buildValue();
