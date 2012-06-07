@@ -120,12 +120,14 @@ bool Task::checkProxyConnection(ConnectionDescription &connection)
     log(Debug) << "checking connection to " << connection.task_name << "." << connection.port_name <<  endlog();
     if(connection.read_port->connected())
     {
+        log(Debug) << "connection to " << connection.task_name << "." << connection.port_name << " is still valid."<<  endlog();
         connection.was_connected = true;
         return true;
     }
-
+    
     if(connection.was_connected == true)
     {
+        log(Debug) << "connection to " << connection.task_name << "." << connection.port_name << " is invalid. Disconnect all"<<  endlog();
         connection.was_connected = false;
         connection.write_port->disconnect();
     }
